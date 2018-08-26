@@ -1,7 +1,11 @@
-from flask import Blueprint
+from flask import Blueprint, Response
 from utils import *
+from futu.futu_sync_api import *
+import subprocess
+
 
 futu_sync_app = Blueprint('futu_sync_app', __name__)
+FUTU_INSTANCE_NAME = 'azero-stock'
 
 
 @futu_sync_app.route("/futu/startSync")
@@ -18,7 +22,9 @@ def start_sync():
         }
     }
     """
-    pass
+    status = get_gce_instance_status(FUTU_INSTANCE_NAME)
+    output = subprocess.check_output(['gcloud', 'compute', 'instances', 'list'])
+    return Response(output)
 
 
 @futu_sync_app.route("/futu/stopSync")
