@@ -4,10 +4,12 @@ import gzip
 from io import BytesIO
 from flask import after_this_request, request
 
+INI_FILE = 'app.ini'
+
 
 def get_config(section):
     config = configparser.ConfigParser()
-    config.read('stock.ini')
+    config.read(INI_FILE)
     return config[section]
 
 

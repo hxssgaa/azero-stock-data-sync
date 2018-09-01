@@ -1,10 +1,14 @@
+import multiprocessing
 from flask import Blueprint
 from utils import *
+from common.utils import StockUtils, ManagedProcess, parse_resp
+from td.td_sync_helper import *
 
 td_sync_app = Blueprint('td_sync_app', __name__)
+TD_SYNC_PROCESS_NAME = 'TD'
 
 
-@td_sync_app.route("/td/startSync")
+@td_sync_app.route("/td/startSync.do")
 @gzipped
 def start_sync():
     """
@@ -14,15 +18,24 @@ def start_sync():
     {
         "success": true  // 当前接口是否成功
         "data": {
-            "status": 0|1|2  //0:当前数据已经是最新，所有股票数据均为最新，1:开启同步，正在同步中, 2: 已经开启了同步进程，
-                             //不能再次开启
+            "status": 0|1|  //0:当前数据同步成功开启，1:当前数据同步已经开启，不需要再开启
         }
     }
     """
-    pass
+    symbols = StockUtils.get_stock_symbols()
+    is_td_process_existed = ManagedProcess.is_process_existed(TD_SYNC_PROCESS_NAME)
+    if is_td_process_existed:
+        return parse_resp({
+            'status': 1
+        })
+
+    ManagedProcess.create_process(TD_SYNC_PROCESS_NAME, start_sync_helper, (symbols,))
+    return parse_resp({
+        'status': 0
+    })
 
 
-@td_sync_app.route("/td/getSyncSymbolsCnt")
+@td_sync_app.route("/td/getSyncSymbolsCnt.do")
 @gzipped
 def get_sync_symbols_cnt():
     """
@@ -39,7 +52,7 @@ def get_sync_symbols_cnt():
     pass
 
 
-@td_sync_app.route("/td/getSyncProgress")
+@td_sync_app.route("/td/getSyncProgress.do")
 @gzipped
 def get_sync_progress():
     """
@@ -64,7 +77,7 @@ def get_sync_progress():
     pass
 
 
-@td_sync_app.route("/td/stop_sync")
+@td_sync_app.route("/td/stop_sync.do")
 @gzipped
 def stop_sync():
     """
