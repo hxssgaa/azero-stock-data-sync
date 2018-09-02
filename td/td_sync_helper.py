@@ -1,9 +1,10 @@
 import asyncio
 import datetime
 
+from common.utils import StockUtils
 from td.td_api import TDQuoteApi
 from queue import Queue
-from db.stock_db import query_latest_td_data, insert_td_data
+from db.stock_db import query_latest_td_data, insert_td_data, query_data_dt_range
 from db.helper import date_2_int
 
 API_KEY = 'HXSSG1124@AMER.OAUTHAP'
@@ -13,6 +14,14 @@ TYPE_MAP = {
     '10': 13,
     '15': 14,
     '30': 15,
+}
+TYPE_FREQ_MAP = {
+    1: '1M',
+    11: '1M',
+    12: '5M',
+    13: '10M',
+    14: '15M',
+    15: '30M'
 }
 
 
@@ -129,3 +138,33 @@ def start_sync_helper(symbols):
             q.put((symbol, freq, 1))
 
     _sync_symbol_data(quote_api, q)
+
+
+def fuzzy_query_code_list(code):
+    stock_infos = StockUtils.get_stock_infos()
+    res_list = list(sorted(filter(lambda x: x['symbol'].startswith(code), stock_infos),
+                           key=lambda y: (y['symbol'] != code, y['symbol'])))
+    return res_list[:20], len(res_list)
+
+
+def query_sync_info(code):
+    t_info_map = {}
+    for t in [1, 11, 12, 13, 14, 15]:
+        t_info_map[t] = query_data_dt_range(code, t)
+    res = {}
+    for t in [1, 11, 12, 13, 14, 15]:
+        freq = TYPE_FREQ_MAP[t]
+        value = t_info_map[t]
+        if value is None:
+            continue
+        if freq in res:
+            res[freq] = {
+                'startDate': min(res[freq]['startDate'], value[0]),
+                'endDate': max(res[freq]['endDate'], value[1])
+            }
+        else:
+            res[freq] = {
+                'startDate': value[0],
+                'endDate': value[1]
+            }
+    return res

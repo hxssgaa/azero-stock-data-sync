@@ -14,6 +14,7 @@ def parse_resp(data, success=True):
 
 class StockUtils(object):
     _cache_symbols = set()
+    _cached_infos = set()
 
     @staticmethod
     def get_stock_symbols():
@@ -21,6 +22,17 @@ class StockUtils(object):
             csv_data = pd.read_csv('stock_code.csv')
             StockUtils._cache_symbols = list(map(lambda x: x[1], csv_data.values))
         return StockUtils._cache_symbols
+
+    @staticmethod
+    def get_stock_infos():
+        if not StockUtils._cached_infos:
+            csv_data = pd.read_csv('stock_code.csv')
+            StockUtils._cached_infos = list(map(lambda x: {
+                'symbol': x[1],
+                'title': x[2],
+                'date': x[-2]
+            }, csv_data.values))
+        return StockUtils._cached_infos
 
     @staticmethod
     def clear_cache():

@@ -3,7 +3,7 @@ from db.helper import *
 from pymongo import ASCENDING, DESCENDING
 
 
-def query_td_data_dt_range(symbol, t):
+def query_data_dt_range(symbol, t):
     """
     Query TD stock data date range from given symbol and type
 

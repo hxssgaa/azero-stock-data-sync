@@ -58,21 +58,58 @@ def start_sync():
         return parse_resp({'message': str(e)}, False)
 
 
-@td_sync_app.route("/td/getSyncSymbolsCnt.do")
+@td_sync_app.route("/td/getSymbolsInfo.do")
 @gzipped
-def get_sync_symbols_cnt():
+def get_symbols_info():
     """
-    Start symbols count to sync.
+    Start symbols syncing info.
+
+    :request:
+    isFuzzy=1
+    code=US.H
 
     :return:
     {
         "success": true  // 当前接口是否成功
         "data": {
-            "syncSymbolsCnt": 1020  // 当前需要同步1020支股票
+            "status": 0|1,  // 0为当前股票没有同步数据或者为模糊搜索状态，1为当前股票有同步数据
+            "codeList": [  // 模糊搜索列表
+                {
+                    "symbol": "US.HUYA",  // 股票代码
+                    "title": "虎牙",  // 公司名称
+                    "date": "1969-12-31"  // 交易所日期
+                },
+                {
+                    "symbol": "US.HMI",  // 股票代码
+                    "title": "華米科技",  // 公司名称
+                    "date": "1969-12-31"  // 交易所日期
+                },
+            ],
+            "codeCnt": "US"  // 股票总数
+            "syncInfo": { // 同步信息
+                "1M": { // 分钟级数据, 秒级数据为1S，天级为1D，还有5分钟(5M)，10分钟(10M)，15分钟(15M)，30分钟(30M)
+                    "startDate": "2016-01-28 00:00:00", // 开始日期
+                    "endDate": "2018-01-28 00:00:00" // 结束日期
+                }
+            }
         }
     }
     """
-    pass
+    try:
+        data_map = {}
+        is_fuzzy = bool(int(request.args.get('isFuzzy')))
+        code = request.args.get('code')
+        if not code:
+            return parse_resp({'message': 'Code can\'t be empty'}, False)
+        if is_fuzzy:
+            res_list, cnt = fuzzy_query_code_list(code)
+            data_map['codeList'] = res_list[0]
+            data_map['codeCnt'] = cnt
+        else:
+            data_map['syncInfo'] = query_sync_info(code)
+        return parse_resp({'data': data_map})
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
 
 
 @td_sync_app.route("/td/getSyncProgress.do")
