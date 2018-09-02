@@ -8,6 +8,26 @@ td_sync_app = Blueprint('td_sync_app', __name__)
 TD_SYNC_PROCESS_NAME = 'TD'
 
 
+@td_sync_app.route("/td/syncStatus.do")
+@gzipped
+def sync_status():
+    """
+    Current sync status indicating if the server is syncing.
+
+    :return:
+    {
+        "success": true  // 当前接口是否成功
+        "data": {
+            "status": 0|1|  //0:当前服务器没有同步数据，1:当前服务器正在同步数据
+        }
+    }
+    """
+    try:
+        return parse_resp({'status': int(ManagedProcess.is_process_existed(TD_SYNC_PROCESS_NAME))})
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
+
+
 @td_sync_app.route("/td/startSync.do")
 @gzipped
 def start_sync():
@@ -22,17 +42,20 @@ def start_sync():
         }
     }
     """
-    symbols = StockUtils.get_stock_symbols()
-    is_td_process_existed = ManagedProcess.is_process_existed(TD_SYNC_PROCESS_NAME)
-    if is_td_process_existed:
-        return parse_resp({
-            'status': 1
-        })
+    try:
+        symbols = StockUtils.get_stock_symbols()
+        is_td_process_existed = ManagedProcess.is_process_existed(TD_SYNC_PROCESS_NAME)
+        if is_td_process_existed:
+            return parse_resp({
+                'status': 1
+            })
 
-    ManagedProcess.create_process(TD_SYNC_PROCESS_NAME, start_sync_helper, (symbols,))
-    return parse_resp({
-        'status': 0
-    })
+        ManagedProcess.create_process(TD_SYNC_PROCESS_NAME, start_sync_helper, (symbols,))
+        return parse_resp({
+            'status': 0
+        })
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
 
 
 @td_sync_app.route("/td/getSyncSymbolsCnt.do")
@@ -77,7 +100,7 @@ def get_sync_progress():
     pass
 
 
-@td_sync_app.route("/td/stop_sync.do")
+@td_sync_app.route("/td/stopSync.do")
 @gzipped
 def stop_sync():
     """
@@ -91,4 +114,16 @@ def stop_sync():
         }
     }
     """
-    pass
+    try:
+        is_td_process_existed = ManagedProcess.is_process_existed(TD_SYNC_PROCESS_NAME)
+        if not is_td_process_existed:
+            return parse_resp({
+                'status': 1
+            })
+
+        ManagedProcess.remove_process(TD_SYNC_PROCESS_NAME)
+        return parse_resp({
+            'status': 0
+        })
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
