@@ -35,6 +35,7 @@ class ManagedProcess(object):
         if name not in ManagedProcess._process_map:
             ManagedProcess._process_map[name] = \
                 multiprocessing.Process(target=handler, name=name, args=args, kwargs=kwargs)
+        ManagedProcess._process_map[name].daemon = True
         ManagedProcess._process_map[name].start()
         return ManagedProcess._process_map[name]
 

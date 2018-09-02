@@ -42,6 +42,14 @@ def query_latest_td_data(symbol, t):
     }).sort([('dt', DESCENDING)]).limit(1).next()['dt'])
 
 
+def create_index(collection):
+    collection.create_index([('type', ASCENDING), ('dt', ASCENDING)], unique=True)
+
+
 def insert_td_data(symbol, rows):
+    existed = symbol in _db.collection_names()
     res = _db[symbol].insert_many(rows)
+
+    if not existed:
+        create_index(_db[symbol])
     return len(res.inserted_ids)
