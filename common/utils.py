@@ -61,3 +61,10 @@ class ManagedProcess(object):
     @staticmethod
     def is_process_existed(name):
         return name in ManagedProcess._process_map
+
+
+class SyncProcessHelper(object):
+
+    @staticmethod
+    def add_sync_record(record):
+        pass

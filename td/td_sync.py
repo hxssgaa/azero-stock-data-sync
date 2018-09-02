@@ -134,7 +134,12 @@ def get_sync_progress():
         }
     }
     """
-    pass
+    try:
+        data_map = {'isSyncing': bool(int(ManagedProcess.is_process_existed(TD_SYNC_PROCESS_NAME)))}
+
+        return parse_resp({'data': data_map})
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
 
 
 @td_sync_app.route("/td/stopSync.do")

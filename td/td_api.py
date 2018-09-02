@@ -83,12 +83,12 @@ class TDTimeApi(TDBaseApi):
     GET_HOUR_URL = 'https://api.tdameritrade.com/v1/marketdata/%s/hours'
 
     def get_hour_for_single_market(self, market, date):
-        '''
+        """
         Get valid market hour for a single market.
         
         :param market query market. Valid values are EQUITY, OPTION, FUTURE
         :param date "The date for which market hours information is requested. Valid ISO-8601 formats are : yyyy-MM-dd and yyyy-MM-dd'T'HH:mm:ssz."
-        '''
+        """
         if not isinstance(market, str) or not isinstance(date, str):
             return None
         return self.make_request(self.GET_HOUR_URL % market, params={
