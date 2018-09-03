@@ -80,6 +80,8 @@ async def async_symbol_data(quote_api, symbol_queue, parallel_cnt=25):
 def _get_td_bson_data(x, symbol_type):
     if not x:
         return None
+    elif 'datetime' not in x:
+        return None
     return {
         'type': symbol_type,
         'dt': date_2_int(x['datetime']),
@@ -99,7 +101,7 @@ def _update_symbol_data(symbol, frequency, quotes):
     if not quotes or 'candles' not in quotes:
         return 0
 
-    candles = list(filter(lambda x: date_2_int(x['datetime']) > latest_date_int, quotes['candles']))
+    candles = list(filter(lambda x: 'datetime' in x and date_2_int(x['datetime']) > latest_date_int, quotes['candles']))
     candles_res = list(map(lambda x: _get_td_bson_data(x, TYPE_MAP[frequency]), candles))
     if not candles_res:
         return 0
