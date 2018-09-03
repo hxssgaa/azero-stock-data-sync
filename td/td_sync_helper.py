@@ -95,7 +95,7 @@ def _get_td_bson_data(x, symbol_type):
 def _update_symbol_data(symbol, frequency, quotes):
     t = TYPE_MAP[frequency]
     latest_date = query_latest_td_data(symbol, t)
-    latest_date_int = date_2_int(latest_date)
+    latest_date_int = date_2_int(latest_date) if latest_date else 0
     if not quotes or 'candles' not in quotes:
         return 0
 
