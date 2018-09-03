@@ -2,7 +2,7 @@ import pandas as pd
 import multiprocessing
 import json
 
-from collections import deque
+from db import _db
 from flask import Response
 
 
@@ -65,37 +65,76 @@ class ManagedProcess(object):
         return name in ManagedProcess._process_map
 
 
+class DbCache(object):
+    def __init__(self, name):
+        self.name = 'cache_%s' % name
+        self.collection = _db[self.name]
+
+    def put(self, k, v):
+        exists = self.collection.count({
+            k: {'$exists': True}
+        })
+        if exists == 0:
+            self.collection.insert_one({
+                k: v
+            })
+        else:
+            self.collection.update_one({
+                k: {'$exists': True}
+            }, {
+                '$set': {
+                    k: v
+                }
+            })
+
+    def get(self, k, d=None):
+        exists = self.collection.count({
+            k: {'$exists': True}
+        })
+        if exists == 0:
+            return d
+        return self.collection.find({
+            k: {'$exists': True}
+        }).next().get(k, d)
+
+    def clear(self):
+        self.collection.delete_many({})
+
+
 class SyncProcessHelper(object):
     MAX_NUM_SHOW_RECORD = 25
-    _records = deque(maxlen=MAX_NUM_SHOW_RECORD)
-    _synced_symbols = set()
-    _progress = 0.0
+    _cache = DbCache('azero')
 
     @staticmethod
     def add_sync_record(record):
         if 'symbol' in record:
-            SyncProcessHelper._synced_symbols.add(record['symbol'])
-        SyncProcessHelper._records.append(record)
+            data = set(SyncProcessHelper._cache.get('synced_symbols', list()))
+            data.add(record['symbol'])
+            SyncProcessHelper._cache.put('synced_symbols', list(data))
+        records = SyncProcessHelper._cache.get('records', list())
+        records.append(record)
+        if len(records) > 25:
+            del records[0]
+        SyncProcessHelper._cache.put('records', records)
 
     @staticmethod
     def get_synced_symbols_count():
-        return len(SyncProcessHelper._synced_symbols)
+        return len(SyncProcessHelper._cache.get('synced_symbols', list()))
 
     @staticmethod
     def get_sync_records():
-        return list(SyncProcessHelper._records)
+        return SyncProcessHelper._cache.get('records', list())
 
     @staticmethod
     def clear():
-        SyncProcessHelper._records.clear()
-        SyncProcessHelper._records = 0.0
+        SyncProcessHelper._cache.clear()
 
     @staticmethod
     def update_sync_progress(progress):
         if progress < 0:
             progress = 0
-        SyncProcessHelper._progress = progress
+        SyncProcessHelper._cache.put('progress', progress)
 
     @staticmethod
     def get_sync_progress():
-        return SyncProcessHelper._progress
+        return float(SyncProcessHelper._cache.get('progress', 0))
