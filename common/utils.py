@@ -2,6 +2,7 @@ import pandas as pd
 import multiprocessing
 import json
 
+from collections import deque
 from flask import Response
 
 
@@ -56,6 +57,7 @@ class ManagedProcess(object):
         if name not in ManagedProcess._process_map:
             raise RuntimeError('%s not in the process map' % name)
         ManagedProcess._process_map[name].terminate()
+        SyncProcessHelper.clear()
         del ManagedProcess._process_map[name]
 
     @staticmethod
@@ -64,7 +66,36 @@ class ManagedProcess(object):
 
 
 class SyncProcessHelper(object):
+    MAX_NUM_SHOW_RECORD = 25
+    _records = deque(maxlen=MAX_NUM_SHOW_RECORD)
+    _synced_symbols = set()
+    _progress = 0.0
 
     @staticmethod
     def add_sync_record(record):
-        pass
+        if 'symbol' in record:
+            SyncProcessHelper._synced_symbols.add(record['symbol'])
+        SyncProcessHelper._records.append(record)
+
+    @staticmethod
+    def get_synced_symbols_count():
+        return len(SyncProcessHelper._synced_symbols)
+
+    @staticmethod
+    def get_sync_records():
+        return list(SyncProcessHelper._records)
+
+    @staticmethod
+    def clear():
+        SyncProcessHelper._records.clear()
+        SyncProcessHelper._records = 0.0
+
+    @staticmethod
+    def update_sync_progress(progress):
+        if progress < 0:
+            progress = 0
+        SyncProcessHelper._progress = progress
+
+    @staticmethod
+    def get_sync_progress():
+        return SyncProcessHelper._progress

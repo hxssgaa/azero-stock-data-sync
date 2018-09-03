@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 
-from common.utils import StockUtils
+from common.utils import StockUtils, SyncProcessHelper
 from td.td_api import TDQuoteApi
 from queue import Queue
 from db.stock_db import query_latest_td_data, insert_td_data, query_data_dt_range
@@ -123,9 +123,14 @@ def _sync_symbol_data(quote_api, symbol_queue, parallel_cnt=25):
 
         for symbol, frequency, quotes, _ in right:
             res = _update_symbol_data(symbol, frequency, quotes)
-            print('symbol: %s~%s~%d' % (symbol, frequency, res))
+            SyncProcessHelper.add_sync_record({
+                'symbol': symbol,
+                'frequency': frequency,
+                'count': res,
+                'syncDateTime': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
 
-        print('Current Progress: %.2f%%' % ((1 - symbol_queue.qsize() / float(total_cnt)) * 100))
+        SyncProcessHelper.update_sync_progress(1 - symbol_queue.qsize() / float(total_cnt))
 
 
 def start_sync_helper(symbols):

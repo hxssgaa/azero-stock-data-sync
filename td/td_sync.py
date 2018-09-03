@@ -122,7 +122,7 @@ def get_sync_progress():
     {
         "success": true  // 当前接口是否成功
         "data": {
-            "lastSyncStocks": [
+            "lastSyncStocks": [  // 最新同步的25条股票数据
                 "symbol": "HUYA",
                 "frequency": "1M",
                 "syncDateTime": "2018-08-14 11:10:00"  // 我们所有的时间都是New York Region时间
@@ -135,8 +135,10 @@ def get_sync_progress():
     }
     """
     try:
-        data_map = {'isSyncing': bool(int(ManagedProcess.is_process_existed(TD_SYNC_PROCESS_NAME)))}
-
+        data_map = {'isSyncing': bool(int(ManagedProcess.is_process_existed(TD_SYNC_PROCESS_NAME))),
+                    'lastSyncStocks': SyncProcessHelper.get_sync_records(),
+                    'currentProgress': SyncProcessHelper.get_sync_progress(),
+                    'syncedSymbol': SyncProcessHelper.get_synced_symbols_count()}
         return parse_resp({'data': data_map})
     except Exception as e:
         return parse_resp({'message': str(e)}, False)
