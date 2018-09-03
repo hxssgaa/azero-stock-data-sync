@@ -80,8 +80,6 @@ async def async_symbol_data(quote_api, symbol_queue, parallel_cnt=25):
 def _get_td_bson_data(x, symbol_type):
     if not x:
         return None
-    elif 'datetime' not in x:
-        return None
     return {
         'type': symbol_type,
         'dt': date_2_int(x['datetime']),
