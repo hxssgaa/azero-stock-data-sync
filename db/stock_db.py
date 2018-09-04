@@ -2,6 +2,8 @@ from db import _db
 from db.helper import *
 from pymongo import ASCENDING, DESCENDING
 
+_collection_names = _db.collection_names()
+
 
 def query_data_dt_range(symbol, t):
     """
@@ -47,7 +49,7 @@ def create_index(collection):
 
 
 def insert_td_data(symbol, rows):
-    existed = symbol in _db.collection_names()
+    existed = symbol in _collection_names
     res = _db[symbol].insert_many(rows)
 
     if not existed:
