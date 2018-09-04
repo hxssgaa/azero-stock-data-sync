@@ -1,6 +1,8 @@
 import asyncio
 import datetime
 
+from pytz import timezone
+
 from common.utils import StockUtils, SyncProcessHelper
 from td.td_api import TDQuoteApi
 from queue import Queue
@@ -127,7 +129,7 @@ def _sync_symbol_data(quote_api, symbol_queue, parallel_cnt=25):
                 'symbol': symbol,
                 'frequency': frequency,
                 'count': res,
-                'syncDateTime': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                'syncDateTime': datetime.datetime.now(timezone('America/New_York')).strftime('%Y-%m-%d %H:%M:%S')
             })
 
         SyncProcessHelper.update_sync_progress(1 - symbol_queue.qsize() / float(total_cnt))
