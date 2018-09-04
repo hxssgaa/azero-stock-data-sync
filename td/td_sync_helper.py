@@ -35,7 +35,7 @@ def _filter_symbol_data(symbol_data):
     right = []
     wrong = []
     for data in symbol_data:
-        if 'empty' in data[2] and data[2]['empty']:
+        if ('empty' in data[2] and data[2]['empty']) or 'candles' not in data[2]:
             wrong.append(data)
         else:
             right.append(data)

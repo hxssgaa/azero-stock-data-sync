@@ -3,7 +3,7 @@ from pytz import timezone
 
 
 def format_history_quotes_result(res):
-    if not res or ('empty' in res and res['empty']) or 'error' in res:
+    if not res or ('empty' in res and res['empty']) or 'error' in res or 'candles' not in res:
         return res
     candles = res['candles']
     for candle in candles:
