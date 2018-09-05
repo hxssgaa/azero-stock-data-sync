@@ -1,6 +1,7 @@
 import pandas as pd
 import multiprocessing
 import json
+import datetime
 
 from db import _db
 from flask import Response
@@ -133,8 +134,19 @@ class SyncProcessHelper(object):
     def update_sync_progress(progress):
         if progress < 0:
             progress = 0
+        last_progress = float(SyncProcessHelper._cache.get('progress', 0))
         SyncProcessHelper._cache.put('progress', progress)
+        last_update_time = int(SyncProcessHelper._cache.get('progress_update_time', 0))
+        now_time = int(datetime.datetime.now().timestamp())
+        SyncProcessHelper._cache.put('progress_update_time', now_time)
+        if last_update_time > 0 and last_progress > 0:
+            SyncProcessHelper._cache.put('progress_eta', (1 - progress) * (now_time - last_update_time)
+                                         / (progress - last_progress))
 
     @staticmethod
     def get_sync_progress():
         return float(SyncProcessHelper._cache.get('progress', 0))
+
+    @staticmethod
+    def get_sync_progress_eta():
+        return float(SyncProcessHelper._cache.get('progress_eta', 0))

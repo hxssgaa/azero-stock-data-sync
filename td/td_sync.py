@@ -138,7 +138,8 @@ def get_sync_progress():
         data_map = {'isSyncing': bool(int(ManagedProcess.is_process_existed(TD_SYNC_PROCESS_NAME))),
                     'lastSyncStocks': SyncProcessHelper.get_sync_records(),
                     'currentProgress': SyncProcessHelper.get_sync_progress(),
-                    'syncedSymbol': SyncProcessHelper.get_synced_symbols_count()}
+                    'syncedSymbol': SyncProcessHelper.get_synced_symbols_count(),
+                    'eta': SyncProcessHelper.get_sync_progress_eta()}
         return parse_resp({'data': data_map})
     except Exception as e:
         return parse_resp({'message': str(e)}, False)
