@@ -6,6 +6,27 @@ IB_SYNC_SYMBOLS_COLLECTION_NAME = 'IB_SYNC_SYMBOLS'
 IB_SYNC_METADATA_COLLECTION_NAME = 'IB_SYNC_METADATA'
 
 
+def query_ib_data_dt_range(symbol, t):
+    """
+    Query stock data date range from given symbol and type
+
+    :param symbol: symbol to query
+    :param t: type of the stock
+    """
+    t = int(t)
+    cnt = _db[symbol].count({
+        'type': t
+    })
+    if cnt == 0:
+        return None
+    res = (_db[symbol].find({
+        'type': t
+    }).sort([('dt', ASCENDING)]).limit(1).next()['dt'], _db[symbol].find({
+        'type': t
+    }).sort([('dt', DESCENDING)]).limit(1).next()['dt'])
+    return tuple(map(lambda x: int_2_date(x, is_short=True), res))
+
+
 def get_ib_sync_symbols():
     return list(_db[IB_SYNC_SYMBOLS_COLLECTION_NAME].find({}, {'_id': False}))
 

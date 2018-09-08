@@ -7,7 +7,7 @@ _collection_names = _db.collection_names()
 
 def query_data_dt_range(symbol, t):
     """
-    Query TD stock data date range from given symbol and type
+    Query stock data date range from given symbol and type
 
     :param symbol: symbol to query
     :param t: type of the stock

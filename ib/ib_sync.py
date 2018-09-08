@@ -5,6 +5,7 @@ from common.utils import parse_resp
 from ib.ib_sync_helper import *
 
 ib_sync_app = Blueprint('ib_sync_app', __name__)
+SUPPORTED_SYNC_TYPES = [0, 1, 2]
 
 
 @ib_sync_app.route("/ib/getSyncSymbols.do")
@@ -192,17 +193,8 @@ def start_sync():
     """
     t = int(request.args.get('type'))
     try:
-        # symbols = StockUtils.get_stock_symbols()
-        # is_td_process_existed = ManagedProcess.is_process_existed(TD_SYNC_PROCESS_NAME)
-        # if is_td_process_existed:
-        #     return parse_resp({
-        #         'status': 1
-        #     })
-        #
-        # ManagedProcess.create_process(TD_SYNC_PROCESS_NAME, start_sync_helper, (symbols,))
-        # return parse_resp({
-        #     'status': 0
-        # })
+        if t not in SUPPORTED_SYNC_TYPES:
+            return parse_resp({'message': 'Type not supported.'}, False)
         return parse_resp(start_sync_helper(t))
     except Exception as e:
         return parse_resp({'message': str(e)}, False)
