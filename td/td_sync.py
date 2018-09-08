@@ -103,7 +103,7 @@ def get_symbols_info():
             return parse_resp({'message': 'Code can\'t be empty'}, False)
         if is_fuzzy:
             res_list, cnt = fuzzy_query_code_list(code)
-            data_map['codeList'] = res_list[0]
+            data_map['codeList'] = res_list
             data_map['codeCnt'] = cnt
         else:
             data_map['syncInfo'] = query_sync_info(code)
