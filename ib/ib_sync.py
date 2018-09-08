@@ -38,7 +38,7 @@ def get_sync_symbols():
         return parse_resp({'message': str(e)}, False)
 
 
-@ib_sync_app.route("/ib/config_sync_symbols", methods=['POST'])
+@ib_sync_app.route("/ib/configSyncSymbols.do", methods=['POST'])
 @gzipped
 def config_sync_symbols():
     """
@@ -76,7 +76,7 @@ def config_sync_symbols():
     """
 
     data = request.get_json()
-    stocks = data.get('stocks')
+    stocks = data.get('codeList')
     if not stocks:
         return parse_resp({'message': 'Stocks can\'t be empty.'}, False)
     try:
@@ -85,7 +85,7 @@ def config_sync_symbols():
         return parse_resp({'message': str(e)}, False)
 
 
-@ib_sync_app.route("/ib/get_sync_metadata")
+@ib_sync_app.route("/ib/getSyncMetadata.do")
 @gzipped
 def get_sync_metadata():
     """
@@ -111,46 +111,64 @@ def get_sync_metadata():
         ]
     }
     """
-    return Response('hello, world')
+    try:
+        return parse_resp(get_sync_metadata_helper())
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
 
 
-@ib_sync_app.route("/ib/config_sync_metadata", methods=['POST'])
+@ib_sync_app.route("/ib/configSyncMetadata.do", methods=['POST'])
 @gzipped
 def config_sync_metadata():
     """
         Config stock sync metadata
         :request:
-        type = 1 // url param
         {
-            "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+            "metadata":[
+                 {
+                    "type": 1,  // 配置类型为分钟级别数据(实际间隔为30s，我们认为30s同为分钟数据)
+                    "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+                 },
+                 {
+                    "type": 2,  // 配置类型为秒级别数据
+                    "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+                 },
+                 {
+                    "type": 3,  // 配置类型为tick类型数据
+                    "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+                 } // 历史股票元数据配置信息
+            ]
         }
-
         :return:
         {
             "success": true  // 当前接口是否成功
-            "errorMessage": "跨度时间错误"  // 若success为false，为具体的错误信息
-            "data": [
-            {
-                "type": 1  // 配置类型为分钟级别数据(实际间隔为30s，我们认为30s同为分钟数据)
-                "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
-            },
-            {
-                "type": 2  // 配置类型为秒级别数据
-                "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
-            },
-            {
-                "type": 3  // 配置类型为tick类型数据
-                "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+            "data": {
+                "metadata": [
+                    {
+                        "type": 1  // 配置类型为分钟级别数据(实际间隔为30s，我们认为30s同为分钟数据)
+                        "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+                    },
+                    {
+                        "type": 2  // 配置类型为秒级别数据
+                        "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+                    },
+                    {
+                        "type": 3  // 配置类型为tick类型数据
+                        "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+                    } // 历史股票元数据配置信息
+                ]
             }
-              // 历史股票元数据配置信息
-        ]
         }
         """
 
     data = request.get_json()
-    historical_data_meta = data.get('historicalDataMeta')
-    print(historical_data_meta)
-    return Response('hello, world')
+    meta_data_list = data.get('metadata')
+    if not meta_data_list:
+        return parse_resp({'message': 'Metadata can\'t be empty.'}, False)
+    try:
+        return parse_resp(update_sync_metadata_helper(meta_data_list))
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
 
 
 @ib_sync_app.route("/ib/start_sync")
