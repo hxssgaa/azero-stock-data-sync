@@ -171,7 +171,7 @@ def config_sync_metadata():
         return parse_resp({'message': str(e)}, False)
 
 
-@ib_sync_app.route("/ib/start_sync")
+@ib_sync_app.route("/ib/startSync.do")
 @gzipped
 def start_sync():
     """
@@ -186,14 +186,29 @@ def start_sync():
     {
         "success": true  // 当前接口是否成功
         "data": {
-            "status": 0|1 //0:同步进程未开启，已经开启，1:表示同步进程已经开启，不需要再开启
+            "status": 0|1|2 //0:同步进程未开启，已经开启，1:表示同步进程已经开启，不需要再开启，2:当前没有需要同步的股票数据
         }
     }
     """
-    pass
+    t = int(request.args.get('type'))
+    try:
+        # symbols = StockUtils.get_stock_symbols()
+        # is_td_process_existed = ManagedProcess.is_process_existed(TD_SYNC_PROCESS_NAME)
+        # if is_td_process_existed:
+        #     return parse_resp({
+        #         'status': 1
+        #     })
+        #
+        # ManagedProcess.create_process(TD_SYNC_PROCESS_NAME, start_sync_helper, (symbols,))
+        # return parse_resp({
+        #     'status': 0
+        # })
+        return parse_resp(start_sync_helper(t))
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
 
 
-@ib_sync_app.route("/ib/stopSync")
+@ib_sync_app.route("/ib/stopSync.do")
 @gzipped
 def stop_sync():
     """
@@ -214,7 +229,7 @@ def stop_sync():
     pass
 
 
-@ib_sync_app.route("/ib/getSyncStatus")
+@ib_sync_app.route("/ib/getSyncStatus.do")
 @gzipped
 def sync_status():
     """
@@ -235,7 +250,7 @@ def sync_status():
     pass
 
 
-@ib_sync_app.route("/ib/getProgress")
+@ib_sync_app.route("/ib/getProgress.do")
 @gzipped
 def get_progress():
     """

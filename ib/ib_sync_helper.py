@@ -24,3 +24,7 @@ def update_sync_metadata_helper(md_list):
     return {
         'metadata': db.update_ib_sync_metadata(md_list)
     }
+
+
+def start_sync_helper(t):
+    pass
