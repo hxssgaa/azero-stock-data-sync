@@ -1,5 +1,8 @@
+import os
 from flask import Blueprint, Response
 from utils import *
+from common.utils import parse_resp
+from ib.ib_sync_helper import *
 
 ib_sync_app = Blueprint('ib_sync_app', __name__)
 
@@ -20,7 +23,13 @@ def get_sync_symbols():
         }
     }
     """
-    return Response('hello, world')
+    if not os.path.exists('stock_sync_codes.txt'):
+        return parse_resp({'message': 'Stock data not exists, please configure it first.'})
+
+    with open('stock_sync_codes.txt') as f:
+        symbols = list(map(lambda x: x.strip(), f.readlines()))
+
+    return parse_resp(get_sync_symbols_data_helper(symbols))
 
 
 @ib_sync_app.route("/ib/config_sync_symbols", methods=['POST'])
@@ -174,6 +183,7 @@ def get_progress():
     :return:
     {
         "success": true  // 当前接口是否成功
+
         "data": {
              "historicalDataProgress": {
                 "HUYA": {  // 股票Symbol
