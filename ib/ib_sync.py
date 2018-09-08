@@ -23,13 +23,10 @@ def get_sync_symbols():
         }
     }
     """
-    if not os.path.exists('stock_sync_codes.txt'):
-        return parse_resp({'message': 'Stock data not exists, please configure it first.'})
-
-    with open('stock_sync_codes.txt') as f:
-        symbols = list(map(lambda x: x.strip(), f.readlines()))
-
-    return parse_resp(get_sync_symbols_data_helper(symbols))
+    try:
+        return parse_resp(get_sync_symbols_data_helper())
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
 
 
 @ib_sync_app.route("/ib/config_sync_symbols", methods=['POST'])
@@ -57,67 +54,71 @@ def config_sync_symbols():
 
     data = request.get_json()
     stocks = data.get('stocks')
-    print(stocks)
-    return Response('ok')
+    if not stocks:
+        return parse_resp({'message': 'Stocks can\'t be empty.'}, False)
+    try:
+        return parse_resp(insert_sync_symbols_data_helper(stocks))
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
 
 
-@ib_sync_app.route("/ib/get_sync_metadata")
-@gzipped
-def get_sync_metadata():
-    """
-    get stock sync metadata which could configure the query date, start date, duration or bar size
-
-    :return:
-    {
-        "success": true  // 当前接口是否成功
-        "errorMessage": "跨度时间错误"  // 若success为false，为具体的错误信息
-        "data": {
-            "historicalDataMeta": {
-                "queryTime": "20180606 00:00:00"  // 查询时间或者最终时间
-                "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
-                "duration": "2 M"  // 一次请求同步的跨度时间，可选的有D, M, Y等
-                "barSize": "1 min"  // 请求的精度，可选的有 min, sec, hour, day等
-            }  // 历史股票元数据配置信息
-        }
-    }
-    """
-    return Response('hello, world')
-
-
-@ib_sync_app.route("/ib/config_sync_metadata", methods=['POST'])
-@gzipped
-def config_sync_metadata():
-    """
-        Config stock sync metadata
-        :request:
-        {
-            "historicalDataMeta": {
-                "queryTime": "20180606 00:00:00"  // 查询时间或者最终时间
-                "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
-                "duration": "2 M"  // 一次请求同步的跨度时间，可选的有D, M, Y等
-                "barSize": "1 min"  // 请求的精度，可选的有 min, sec, hour, day等
-            }  // 历史股票元数据配置信息
-        }
-
-        :return:
-        {
-            "success": true  // 当前接口是否成功
-            "errorMessage": "跨度时间错误"  // 若success为false，为具体的错误信息
-            "data": {
-                "historicalDataMeta": {
-                    "queryTime": "20180606 00:00:00"  // 查询时间或者最终时间
-                    "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
-                    "duration": "2 M"  // 一次请求同步的跨度时间，可选的有D, M, Y等
-                    "barSize": "1 min"  // 请求的精度，可选的有 min, sec, hour, day等
-                }  // 历史股票元数据配置信息
-            }
-        }
-        """
-
-    data = request.get_json()
-    historical_data_meta = data.get('historicalDataMeta')
-    print(historical_data_meta)
-    return Response('hello, world')
+# @ib_sync_app.route("/ib/get_sync_metadata")
+# @gzipped
+# def get_sync_metadata():
+#     """
+#     get stock sync metadata which could configure the query date, start date, duration or bar size
+#
+#     :return:
+#     {
+#         "success": true  // 当前接口是否成功
+#         "errorMessage": "跨度时间错误"  // 若success为false，为具体的错误信息
+#         "data": {
+#             "historicalDataMeta": {
+#                 "queryTime": "20180606 00:00:00"  // 查询时间或者最终时间
+#                 "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+#                 "duration": "2 M"  // 一次请求同步的跨度时间，可选的有D, M, Y等
+#                 "barSize": "1 min"  // 请求的精度，可选的有 min, sec, hour, day等
+#             }  // 历史股票元数据配置信息
+#         }
+#     }
+#     """
+#     return Response('hello, world')
+#
+#
+# @ib_sync_app.route("/ib/config_sync_metadata", methods=['POST'])
+# @gzipped
+# def config_sync_metadata():
+#     """
+#         Config stock sync metadata
+#         :request:
+#         {
+#             "historicalDataMeta": {
+#                 "queryTime": "20180606 00:00:00"  // 查询时间或者最终时间
+#                 "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+#                 "duration": "2 M"  // 一次请求同步的跨度时间，可选的有D, M, Y等
+#                 "barSize": "1 min"  // 请求的精度，可选的有 min, sec, hour, day等
+#             }  // 历史股票元数据配置信息
+#         }
+#
+#         :return:
+#         {
+#             "success": true  // 当前接口是否成功
+#             "errorMessage": "跨度时间错误"  // 若success为false，为具体的错误信息
+#             "data": {
+#                 "historicalDataMeta": {
+#                     "queryTime": "20180606 00:00:00"  // 查询时间或者最终时间
+#                     "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+#                     "duration": "2 M"  // 一次请求同步的跨度时间，可选的有D, M, Y等
+#                     "barSize": "1 min"  // 请求的精度，可选的有 min, sec, hour, day等
+#                 }  // 历史股票元数据配置信息
+#             }
+#         }
+#         """
+#
+#     data = request.get_json()
+#     historical_data_meta = data.get('historicalDataMeta')
+#     print(historical_data_meta)
+#     return Response('hello, world')
 
 
 @ib_sync_app.route("/ib/start_sync")
@@ -127,7 +128,9 @@ def start_sync():
     Start sync stock data.
 
     :request:
-    restart=0  // 是否重启同步流程, 0为不重启, 1为重启
+    type=0|1|2  // 0 为同步分钟级别数据(实际间隔为30s，我们认为30s同为分钟数据)
+                // 1 为同步1秒级别数据，实际间隔为1s
+                // 2 为同步tick数据
 
     :return:
     {
@@ -145,6 +148,10 @@ def start_sync():
 def stop_sync():
     """
     Stop sync stock data.
+    :request:
+    type=0|1|2  // 0 为同步分钟级别数据(实际间隔为30s，我们认为30s同为分钟数据)
+                // 1 为同步1秒级别数据，实际间隔为1s
+                // 2 为同步tick数据
 
     :return:
     {
@@ -162,6 +169,10 @@ def stop_sync():
 def sync_status():
     """
     Get current sync status
+    :request:
+    type=0|1|2  // 0 为同步分钟级别数据(实际间隔为30s，我们认为30s同为分钟数据)
+                // 1 为同步1秒级别数据，实际间隔为1s
+                // 2 为同步tick数据
 
     :return:
     {

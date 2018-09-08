@@ -6,7 +6,7 @@ from pytz import timezone
 from common.utils import StockUtils, SyncProcessHelper
 from td.td_api import TDQuoteApi
 from queue import Queue
-from db.stock_db import query_latest_td_data, insert_td_data, query_data_dt_range
+from db.td_stock_db import query_latest_td_data, insert_td_data, query_data_dt_range
 from db.helper import date_2_int
 
 API_KEY = 'HXSSG1124@AMER.OAUTHAP'

@@ -11,4 +11,4 @@ DbCache('azero').clear()
 
 if __name__ == "__main__":
     cfg = get_config('server')
-    app.run(threaded=True, host=cfg['ServerHost'], port=int(cfg['ServerPort']))
+    app.run(threaded=True, debug=True, host=cfg['ServerHost'], port=int(cfg['ServerPort']))
