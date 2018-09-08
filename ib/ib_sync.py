@@ -7,7 +7,7 @@ from ib.ib_sync_helper import *
 ib_sync_app = Blueprint('ib_sync_app', __name__)
 
 
-@ib_sync_app.route("/ib/get_sync_symbols")
+@ib_sync_app.route("/ib/getSyncSymbols.do")
 @gzipped
 def get_sync_symbols():
     """
@@ -17,9 +17,18 @@ def get_sync_symbols():
     {
         "success": true  // 当前接口是否成功
         "data": {
-            "stocks": [
-                "symbol": "HUYA"
-            ] // 当前已同步或者需要同步的股票数据
+            "codeList": [  // symbol列表
+                {
+                    "symbol": "US.HUYA",  // 股票代码
+                    "title": "虎牙",  // 公司名称
+                    "date": "1969-12-31"  // 交易所日期
+                },
+                {
+                    "symbol": "US.HMI",  // 股票代码
+                    "title": "華米科技",  // 公司名称
+                    "date": "1969-12-31"  // 交易所日期
+                },
+            ],
         }
     }
     """
@@ -36,18 +45,32 @@ def config_sync_symbols():
     Config symbols which has been or need syncing.
     :request:
     {
-        "stocks": [
-            "symbol": "HUYA"
-        ] // 传入股票symbols数据
+        "codeList": [  // symbol列表
+            {
+                "symbol": "US.HUYA",  // 股票代码
+            },
+            {
+                "symbol": "US.HMI",  // 股票代码
+            },
+        ],
     }
 
     :return:
     {
         "success": true  // 当前接口是否成功
         "data": {
-            "stocks": [
-                "symbol": "HUYA"
-            ] // 当前已同步或者需要同步的股票数据
+            "codeList": [  // symbol列表
+                {
+                    "symbol": "US.HUYA",  // 股票代码
+                    "title": "虎牙",  // 公司名称
+                    "date": "1969-12-31"  // 交易所日期
+                },
+                {
+                    "symbol": "US.HMI",  // 股票代码
+                    "title": "華米科技",  // 公司名称
+                    "date": "1969-12-31"  // 交易所日期
+                },
+            ],
         }
     }
     """
@@ -62,63 +85,72 @@ def config_sync_symbols():
         return parse_resp({'message': str(e)}, False)
 
 
-# @ib_sync_app.route("/ib/get_sync_metadata")
-# @gzipped
-# def get_sync_metadata():
-#     """
-#     get stock sync metadata which could configure the query date, start date, duration or bar size
-#
-#     :return:
-#     {
-#         "success": true  // 当前接口是否成功
-#         "errorMessage": "跨度时间错误"  // 若success为false，为具体的错误信息
-#         "data": {
-#             "historicalDataMeta": {
-#                 "queryTime": "20180606 00:00:00"  // 查询时间或者最终时间
-#                 "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
-#                 "duration": "2 M"  // 一次请求同步的跨度时间，可选的有D, M, Y等
-#                 "barSize": "1 min"  // 请求的精度，可选的有 min, sec, hour, day等
-#             }  // 历史股票元数据配置信息
-#         }
-#     }
-#     """
-#     return Response('hello, world')
-#
-#
-# @ib_sync_app.route("/ib/config_sync_metadata", methods=['POST'])
-# @gzipped
-# def config_sync_metadata():
-#     """
-#         Config stock sync metadata
-#         :request:
-#         {
-#             "historicalDataMeta": {
-#                 "queryTime": "20180606 00:00:00"  // 查询时间或者最终时间
-#                 "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
-#                 "duration": "2 M"  // 一次请求同步的跨度时间，可选的有D, M, Y等
-#                 "barSize": "1 min"  // 请求的精度，可选的有 min, sec, hour, day等
-#             }  // 历史股票元数据配置信息
-#         }
-#
-#         :return:
-#         {
-#             "success": true  // 当前接口是否成功
-#             "errorMessage": "跨度时间错误"  // 若success为false，为具体的错误信息
-#             "data": {
-#                 "historicalDataMeta": {
-#                     "queryTime": "20180606 00:00:00"  // 查询时间或者最终时间
-#                     "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
-#                     "duration": "2 M"  // 一次请求同步的跨度时间，可选的有D, M, Y等
-#                     "barSize": "1 min"  // 请求的精度，可选的有 min, sec, hour, day等
-#                 }  // 历史股票元数据配置信息
-#             }
-#         }
-#         """
-#
-#     data = request.get_json()
-#     historical_data_meta = data.get('historicalDataMeta')
-#     print(historical_data_meta)
-#     return Response('hello, world')
+@ib_sync_app.route("/ib/get_sync_metadata")
+@gzipped
+def get_sync_metadata():
+    """
+    get stock sync metadata which could configure the query date, start date, duration or bar size
+
+    :return:
+    {
+        "success": true  // 当前接口是否成功
+        "data": [
+            {
+                "type": 1  // 配置类型为分钟级别数据(实际间隔为30s，我们认为30s同为分钟数据)
+                "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+            },
+            {
+                "type": 2  // 配置类型为秒级别数据
+                "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+            },
+            {
+                "type": 3  // 配置类型为tick类型数据
+                "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+            }
+              // 历史股票元数据配置信息
+        ]
+    }
+    """
+    return Response('hello, world')
+
+
+@ib_sync_app.route("/ib/config_sync_metadata", methods=['POST'])
+@gzipped
+def config_sync_metadata():
+    """
+        Config stock sync metadata
+        :request:
+        type = 1 // url param
+        {
+            "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+        }
+
+        :return:
+        {
+            "success": true  // 当前接口是否成功
+            "errorMessage": "跨度时间错误"  // 若success为false，为具体的错误信息
+            "data": [
+            {
+                "type": 1  // 配置类型为分钟级别数据(实际间隔为30s，我们认为30s同为分钟数据)
+                "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+            },
+            {
+                "type": 2  // 配置类型为秒级别数据
+                "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+            },
+            {
+                "type": 3  // 配置类型为tick类型数据
+                "startDate": "20140606 00:00:00"  // 开始时间，同步股票数据不会超过开始时间
+            }
+              // 历史股票元数据配置信息
+        ]
+        }
+        """
+
+    data = request.get_json()
+    historical_data_meta = data.get('historicalDataMeta')
+    print(historical_data_meta)
+    return Response('hello, world')
 
 
 @ib_sync_app.route("/ib/start_sync")
@@ -136,7 +168,7 @@ def start_sync():
     {
         "success": true  // 当前接口是否成功
         "data": {
-            "startSyncStatus": 0|1 //0:同步进程未开启，正在开启，1:表示同步进程已经开启，
+            "status": 0|1 //0:同步进程未开启，已经开启，1:表示同步进程已经开启，不需要再开启
         }
     }
     """
@@ -157,7 +189,7 @@ def stop_sync():
     {
         "success": true  // 当前接口是否成功
         "data": {
-            "stopSyncStatus": 0|1 //0:同步进程已开启，正在挂壁，1:表示同步进程已经关闭，
+            "status": 0|1 //0:同步进程已开启，正在关闭，1:表示同步进程已经关闭，无需再关闭
         }
     }
     """
@@ -178,7 +210,7 @@ def sync_status():
     {
         "success": true  // 当前接口是否成功
         "data": {
-            "syncStatus": 0|1 //0:当前未开启同步，1:当前已开启同步
+            "status": 0|1 //0:当前未开启同步，1:当前已开启同步
         }
     }
     """
