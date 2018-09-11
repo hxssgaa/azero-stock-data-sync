@@ -1,3 +1,4 @@
 .idea/
 stock_sync_codes.txt
 *.pyc
+.theia
