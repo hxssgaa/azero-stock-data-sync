@@ -1,7 +1,7 @@
 from ib import ib_sync
 from td import td_sync
-from flask import Flask, render_template
-from utils import *
+from flask import Flask
+from utils import get_config
 from common.utils import DbCache
 
 app = Flask(__name__)
@@ -11,4 +11,5 @@ DbCache('azero').clear()
 
 if __name__ == "__main__":
     cfg = get_config('server')
-    app.run(threaded=True, debug=True, host=cfg['ServerHost'], port=int(cfg['ServerPort']))
+    app.run(threaded=True, debug=True, host=cfg['ServerHost'], port=int(
+        cfg['ServerPort']))
