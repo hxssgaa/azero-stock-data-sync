@@ -2,7 +2,7 @@ from db import _db
 from db.helper import *
 from pymongo import ASCENDING, DESCENDING
 
-_collection_names = _db.collection_names()
+collection_names = _db.collection_names()
 
 
 def query_data_dt_range(symbol, t):
@@ -45,11 +45,12 @@ def query_latest_td_data(symbol, t):
 
 
 def create_index(collection):
-    collection.create_index([('type', ASCENDING), ('dt', ASCENDING)], unique=True)
+    collection.create_index([('type', ASCENDING), ('dt', ASCENDING)],
+                            unique=True)
 
 
 def insert_td_data(symbol, rows):
-    existed = symbol in _collection_names
+    existed = symbol in collection_names
     res = _db[symbol].insert_many(rows)
 
     if not existed:

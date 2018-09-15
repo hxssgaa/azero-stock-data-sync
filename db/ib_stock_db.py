@@ -1,5 +1,6 @@
 from db import _db
-from db.helper import *
+from db.helper import int_2_date
+from db.td_stock_db import create_index, collection_names
 from pymongo import ASCENDING, DESCENDING
 
 IB_SYNC_SYMBOLS_COLLECTION_NAME = 'IB_SYNC_SYMBOLS'
@@ -51,3 +52,12 @@ def update_ib_sync_metadata(md_list):
     _db[IB_SYNC_METADATA_COLLECTION_NAME].delete_many({})
     _db[IB_SYNC_METADATA_COLLECTION_NAME].insert_many(md_list)
     return get_ib_sync_metadata()
+
+
+def insert_ib_data(symbol, rows):
+    existed = symbol in collection_names
+    res = _db[symbol].insert_many(rows)
+
+    if not existed:
+        create_index(_db[symbol])
+    return len(res.inserted_ids)
