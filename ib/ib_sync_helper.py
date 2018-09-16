@@ -148,7 +148,7 @@ def _inner_start_1s_sync_helper(contracts):
         else:
             latest_sync_date_time = contract_dt_range[1]
             query_time = _get_offset_trading_datetime(
-                trading_days, latest_sync_date_time, sync_seconds)
+                trading_days, latest_sync_date_time, sync_seconds + 1)
         while True:
             if tmp_sync_count == 60:
                 tmp_sync_count = 0
