@@ -14,6 +14,8 @@ def query_ib_data_dt_range(symbol, t):
     :param symbol: symbol to query
     :param t: type of the stock
     """
+    if not symbol.startswith('US.'):
+        symbol = 'US.%s' % symbol
     t = int(t)
     cnt = _db[symbol].count({
         'type': t
@@ -55,6 +57,9 @@ def update_ib_sync_metadata(md_list):
 
 
 def insert_ib_data(symbol, rows):
+    if not symbol.startswith('US.'):
+        symbol = 'US.%s' % symbol
+
     existed = symbol in collection_names
     res = _db[symbol].insert_many(rows)
 
