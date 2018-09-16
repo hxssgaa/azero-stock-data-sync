@@ -1,3 +1,5 @@
+import time
+
 from ibapi.wrapper import EWrapper
 from ibapi.client import EClient
 from ibapi.contract import *
@@ -212,6 +214,7 @@ class TestClient(EClient):
                 break
 
             if data[1] == 'error' and data[2] != 2106:
+                res.append(data)
                 break
         return res
 

@@ -158,9 +158,14 @@ def _inner_start_1s_sync_helper(contracts):
             s1 = time.time()
             hist_data = app.req_historical_data(
                 1000 + i, contract, query_time, '%d S' % sync_seconds, '1 secs')
+            if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'pacing' in hist_data[0][3]:
+                tmp_sync_count = 0
+                time.sleep(600)
+                hist_data = app.req_historical_data(
+                    1000 + i, contract, query_time, '%d S' % sync_seconds, '1 secs')
             s2 = time.time()
 
-            if not hist_data:
+            if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'no data' in hist_data[0][3]:
                 query_time = _get_offset_trading_datetime(
                     trading_days, query_time, sync_seconds)
                 if _is_datetime_up_to_date(trading_days, query_time):
@@ -172,7 +177,7 @@ def _inner_start_1s_sync_helper(contracts):
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 32),
                                  hist_data[:-1]))
             print(bson_list[0])
-            # db.insert_ib_data(contract.symbol, bson_list)
+            db.insert_ib_data(contract.symbol, bson_list)
 
             # last_date = int_2_date(bson_list[-1]['dt'], is_short=True)
             if _is_datetime_up_to_date(trading_days, query_time):
