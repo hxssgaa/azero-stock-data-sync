@@ -3,6 +3,8 @@ from db.helper import int_2_date
 from db.td_stock_db import create_index, collection_names
 from pymongo import ASCENDING, DESCENDING
 
+from ib.ib_api import IBApp
+
 IB_SYNC_SYMBOLS_COLLECTION_NAME = 'IB_SYNC_SYMBOLS'
 IB_SYNC_METADATA_COLLECTION_NAME = 'IB_SYNC_METADATA'
 
@@ -28,6 +30,18 @@ def query_ib_data_dt_range(symbol, t):
         'type': t
     }).sort([('dt', DESCENDING)]).limit(1).next()['dt'])
     return tuple(map(lambda x: int_2_date(x, is_short=True), res))
+
+
+def query_ib_earliest_dt(app: IBApp, req_id, contract):
+    """
+    Get earliest datetime point in given symbol
+
+    :param app IBApp
+    :param contract: Given contract to query
+    :return: Earliest datetime point
+    """
+    head_time, errors = app.req_head_time_stamp(req_id, contract)
+    return '%s %s' % (head_time[1].split()[0], head_time[1].split()[1])
 
 
 def get_ib_sync_symbols():

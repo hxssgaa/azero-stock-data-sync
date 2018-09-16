@@ -1,4 +1,6 @@
 import datetime
+from bisect import bisect_left
+
 import db.ib_stock_db as db
 import ib.ib_utils as utils
 import time
@@ -53,26 +55,54 @@ def update_sync_metadata_helper(md_list):
     }
 
 
-def _get_offset_trading_day(trading_days, trading_day, offset_day):
+def _get_offset_trading_day(trading_days, trading_day, offset_day, make_time='23:59:59'):
     if trading_day not in trading_days:
         raise RuntimeError(
             'Specified trading day: %s not in trading days' % trading_day)
     index = trading_days.index(trading_day)
     if index + offset_day >= len(trading_days):
         return trading_days[-1]
-    return '%s 23:59:59' % trading_days[index + offset_day]
+    return '%s %s' % (trading_days[index + offset_day], make_time)
+
+
+def _get_offset_trading_datetime(trading_days, dt_str, offset_seconds):
+    dt_date = dt_str.split()[0]
+    if dt_date not in trading_days:
+        raise RuntimeError(
+            'Specified trading day: %s not in trading days' % dt_date)
+    dt_time = dt_str.split()[1]
+    if dt_time >= '20:00:00':
+        index = trading_days.index(dt_date) + 1
+        offset_time = (datetime.datetime.strptime('04:00:00', '%H:%M:%S') \
+                       + datetime.timedelta(seconds=offset_seconds)).strftime('%H:%M:%S')
+        return '%s %s' % (trading_days[index], offset_time)
+
+    dt_time = max('04:00:00', dt_time)
+    dt_time = min('20:00:00', dt_time)
+    offset_time = (datetime.datetime.strptime(dt_time, '%H:%M:%S') + \
+                   datetime.timedelta(seconds=offset_seconds)).strftime('%H:%M:%S')
+    offset_time = min('20:00:00', offset_time)
+    return '%s %s' % (dt_date, offset_time)
+
+
+def _is_datetime_up_to_date(trading_days, dt_str):
+    dt_date = datetime.datetime.now().strftime('%Y%m%d')
+    index = bisect_left(trading_days, dt_date)
+    return dt_str.split()[0] == trading_days[index]
 
 
 def _inner_start_1m_sync_helper(contracts):
     app = IBApp("10.150.0.2", 4001, 50)
-    now_datetime = datetime.datetime.now().strftime('%Y%m%d %H:%M:%S')
     trading_days = utils.get_trading_days('20040123', (datetime.datetime.now()
                                                        + datetime.timedelta(30)).strftime('%Y%m%d'))
     sync_days = 5
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
+        contract_earliest_time = max('20040123 23:59:59',
+                                     db.query_ib_earliest_dt(app, 10000 + i, contract))
         if not contract_dt_range:
-            query_time = datetime.datetime.now().strftime('%Y%m%d 23:59:59')
+            query_time = _get_offset_trading_day(
+                trading_days, contract_earliest_time.split()[0], sync_days - 1)
         else:
             latest_sync_date = contract_dt_range[1].split()[0]
             query_time = _get_offset_trading_day(
@@ -103,7 +133,54 @@ def _inner_start_1m_sync_helper(contracts):
 
 
 def _inner_start_1s_sync_helper(contracts):
-    pass
+    app = IBApp("10.150.0.2", 4001, 60)
+    trading_days = utils.get_trading_days('20040123', (datetime.datetime.now()
+                                                       + datetime.timedelta(30)).strftime('%Y%m%d'))
+    sync_seconds = 1800
+    tmp_sync_count = 0
+    for i, contract in enumerate(contracts):
+        contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 32)
+        contract_earliest_time = max('20180601 00:00:00',
+                                     db.query_ib_earliest_dt(app, 10000 + i, contract))
+        if not contract_dt_range:
+            query_time = _get_offset_trading_datetime(
+                trading_days, contract_earliest_time, sync_seconds)
+        else:
+            latest_sync_date_time = contract_dt_range[1]
+            query_time = _get_offset_trading_datetime(
+                trading_days, latest_sync_date_time, sync_seconds)
+        while True:
+            if tmp_sync_count == 60:
+                tmp_sync_count = 0
+                time.sleep(600)
+
+            print(contract.symbol, query_time)
+            s1 = time.time()
+            hist_data = app.req_historical_data(
+                1000 + i, contract, query_time, '%d S' % sync_seconds, '1 secs')
+            s2 = time.time()
+
+            if not hist_data:
+                query_time = _get_offset_trading_datetime(
+                    trading_days, query_time, sync_seconds)
+                if _is_datetime_up_to_date(trading_days, query_time):
+                    break
+                tmp_sync_count += 1
+                continue
+
+            print(hist_data[-1], (s2 - s1))
+            bson_list = list(map(lambda x: _get_ib_bson_data(x, 32),
+                                 hist_data[:-1]))
+            print(bson_list[0])
+            # db.insert_ib_data(contract.symbol, bson_list)
+
+            # last_date = int_2_date(bson_list[-1]['dt'], is_short=True)
+            if _is_datetime_up_to_date(trading_days, query_time):
+                break
+
+            query_time = _get_offset_trading_datetime(
+                trading_days, query_time, sync_seconds)
+            tmp_sync_count += 1
 
 
 def _inner_start_tick_sync_helper(contracts):
