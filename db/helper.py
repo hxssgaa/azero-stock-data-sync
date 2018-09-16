@@ -8,7 +8,7 @@ def int_2_date(int_date, is_short=False):
         return datetime.datetime.fromtimestamp(int_date).strftime('%Y-%m-%d %H:%M:%S')
 
 
-def int_2_date_utc(int_date):
+def int_2_date_for_tick(int_date):
     return (datetime.datetime.utcfromtimestamp(int_date) - datetime.timedelta(hours=4))\
         .strftime('%Y%m%d %H:%M:%S')
 

@@ -7,7 +7,7 @@ import time
 import pdb
 from common.utils import ManagedProcess
 from ib.ib_api import IBApp
-from db.helper import date_2_int, int_2_date, int_2_date_utc
+from db.helper import date_2_int, int_2_date, int_2_date_for_tick
 
 IB_SYNC_PROCESS_NAME = 'IB_%d'
 
@@ -194,7 +194,11 @@ def _inner_start_tick_sync_helper(contracts):
     hist_ticks = app.req_historical_ticks(1000, contracts[0], '20180601 00:00:00', '')
     hist_tick_data = hist_ticks.get(timeout=60)
     if hist_tick_data[2]:
-        hist_tick_data = list(map(lambda x: int_2_date_utc(x.time), hist_tick_data[2]))
+        hist_tick_data = list(map(lambda x: (int_2_date_for_tick(x.time),
+                                             x.mask,
+                                             x.size,
+                                             x.exchange,
+                                             x.specialConditions), hist_tick_data[2]))
 
     print(hist_tick_data)
     # sync_seconds = 1800
