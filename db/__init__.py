@@ -1,3 +1,5 @@
 from pymongo import MongoClient
+from utils import get_config
 
-_db = MongoClient('10.150.0.3', 8081)['azero-stock']
+cfg = get_config('db')
+_db = MongoClient(cfg['DbHost'], int(cfg['DbPort']))['azero-stock']
