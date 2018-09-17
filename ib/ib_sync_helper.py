@@ -36,6 +36,19 @@ def _get_ib_bson_data(hist_data, t):
     }
 
 
+def _get_ib_tick_bson_data(tick_data):
+    if not tick_data:
+        return None
+    return {
+        'dt': tick_data[0],
+        'mask': tick_data[1],
+        'size': tick_data[2],
+        'price': tick_data[3],
+        'exchange': tick_data[4],
+        'specialConditions': tick_data[5]
+    }
+
+
 def insert_sync_symbols_data_helper(symbols):
     if not symbols:
         return {}
@@ -211,6 +224,7 @@ def _inner_start_tick_sync_helper(contracts):
                 hist_tick_data = list(map(lambda x: (int_2_date_for_tick(x.time),
                                                      x.mask,
                                                      x.size,
+                                                     x.price,
                                                      x.exchange,
                                                      x.specialConditions), hist_tick_data[2]))
             if hist_tick_data[1] == 'historical_ticks_last':
@@ -220,7 +234,8 @@ def _inner_start_tick_sync_helper(contracts):
 
             query_time = _get_offset_trading_datetime(
                 trading_days, hist_tick_data[-1][0], 1)
-
+            bson_data = list(map(_get_ib_tick_bson_data, hist_tick_data))
+            print(bson_data[0])
             print('%s~%s' % (hist_tick_data[0][0], hist_tick_data[-1][0]))
 
             if not hist_tick_data or _is_datetime_up_to_date(trading_days, query_time):

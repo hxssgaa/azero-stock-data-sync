@@ -32,7 +32,26 @@ def query_ib_data_dt_range(symbol, t):
     return tuple(map(lambda x: int_2_date(x, is_short=True), res))
 
 
-def query_ib_earliest_dt(app: IBApp, req_id, contract):
+def query_ib_tick_dt_range(symbol):
+    """
+    Query stock data date range from given symbol and type
+
+    :param symbol: symbol to query
+    :param t: type of the stock
+    """
+    if not symbol.startswith('US.'):
+        symbol = 'US.%s' % symbol
+    symbol = '%s-tick' % symbol
+    cnt = _db[symbol].count({})
+    if cnt == 0:
+        return None
+    res = (_db[symbol].find({}).sort([('dt', ASCENDING)])
+           .limit(1).next()['dt'], _db[symbol].find({})
+           .sort([('dt', DESCENDING)]).limit(1).next()['dt'])
+    return tuple(map(lambda x: int_2_date(x, is_short=True), res))
+
+
+def query_ib_earliest_dt(app, req_id, contract):
     """
     Get earliest datetime point in given symbol
 
@@ -79,4 +98,17 @@ def insert_ib_data(symbol, rows):
 
     if not existed:
         create_index(_db[symbol])
+    return len(res.inserted_ids)
+
+
+def insert_ib_tick_data(symbol, rows):
+    if not symbol.startswith('US.'):
+        symbol = 'US.%s' % symbol
+
+    symbol = '%s-tick' % symbol
+    existed = symbol in collection_names
+    res = _db[symbol].insert_many(rows)
+
+    if not existed:
+        _db[symbol].create_index([('dt', ASCENDING)])
     return len(res.inserted_ids)
