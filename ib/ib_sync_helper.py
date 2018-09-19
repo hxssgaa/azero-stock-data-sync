@@ -40,7 +40,8 @@ def _get_ib_tick_bson_data(tick_data):
     if not tick_data:
         return None
     return {
-        'dt': tick_data[0],
+        'dt': date_2_int('%s %s' % (tick_data[0].split()[0],
+                                    tick_data[0].split()[1]), is_short=True),
         'mask': tick_data[1],
         'size': tick_data[2],
         'price': tick_data[3],
@@ -206,9 +207,9 @@ def _inner_start_tick_sync_helper(contracts):
         '20040123', (datetime.datetime.now() +
                      datetime.timedelta(30)).strftime('%Y%m%d'))
     for i, contract in enumerate(contracts):
-        contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 33)
+        contract_dt_range = db.query_ib_tick_dt_range(contract.symbol)
         contract_earliest_time = max(
-            '20180917 00:00:00', db.query_ib_earliest_dt(app, 10000 + i, contract))
+            '20180601 00:00:00', db.query_ib_earliest_dt(app, 10000 + i, contract))
         if not contract_dt_range:
             query_time = contract_earliest_time
         else:
@@ -238,6 +239,7 @@ def _inner_start_tick_sync_helper(contracts):
             query_time = _get_offset_trading_datetime(
                 trading_days, hist_tick_data[-1][0], 1)
             bson_data = list(map(_get_ib_tick_bson_data, hist_tick_data))
+            db.insert_ib_tick_data(contract.symbol, bson_data)
             print(bson_data[0])
             print('%s~%s~%s' % (contract.symbol, hist_tick_data[0][0], hist_tick_data[-1][0]))
 
