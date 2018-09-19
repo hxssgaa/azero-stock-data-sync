@@ -208,7 +208,7 @@ def _inner_start_tick_sync_helper(contracts):
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 33)
         contract_earliest_time = max(
-            '20180601 00:00:00', db.query_ib_earliest_dt(app, 10000 + i, contract))
+            '20180917 00:00:00', db.query_ib_earliest_dt(app, 10000 + i, contract))
         if not contract_dt_range:
             query_time = contract_earliest_time
         else:
@@ -217,8 +217,11 @@ def _inner_start_tick_sync_helper(contracts):
                 trading_days, latest_sync_date_time, 1)
 
         while True:
+            if _is_datetime_up_to_date(trading_days, query_time):
+                break
+
             hist_ticks = app.req_historical_ticks(
-                1000, contracts[0], query_time, '')
+                1000, contract, query_time, '')
             hist_tick_data = hist_ticks.get(timeout=60)
             if hist_tick_data[2]:
                 hist_tick_data = list(map(lambda x: (int_2_date_for_tick(x.time),
@@ -236,9 +239,9 @@ def _inner_start_tick_sync_helper(contracts):
                 trading_days, hist_tick_data[-1][0], 1)
             bson_data = list(map(_get_ib_tick_bson_data, hist_tick_data))
             print(bson_data[0])
-            print('%s~%s' % (hist_tick_data[0][0], hist_tick_data[-1][0]))
+            print('%s~%s~%s' % (contract.symbol, hist_tick_data[0][0], hist_tick_data[-1][0]))
 
-            if not hist_tick_data or _is_datetime_up_to_date(trading_days, query_time):
+            if not hist_tick_data:
                 break
 
 
@@ -264,4 +267,13 @@ def start_sync_helper(t):
         symbol['symbol'], 'SMART') for symbol in symbols]
     ManagedProcess.create_process(
         IB_SYNC_PROCESS_NAME % t, _inner_start_sync_helper, (t, contracts))
+    return {'status': 0}
+
+
+def stop_sync_helper(t):
+    t = int(t)
+    if not ManagedProcess.is_process_existed(IB_SYNC_PROCESS_NAME % t):
+        return {'status': 1}
+
+    ManagedProcess.remove_process(IB_SYNC_PROCESS_NAME % t)
     return {'status': 0}

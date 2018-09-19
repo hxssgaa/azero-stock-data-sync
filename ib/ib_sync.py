@@ -218,7 +218,13 @@ def stop_sync():
         }
     }
     """
-    pass
+    t = int(request.args.get('type'))
+    try:
+        if t not in SUPPORTED_SYNC_TYPES:
+            return parse_resp({'message': 'Type not supported.'}, False)
+        return parse_resp(stop_sync_helper(t))
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
 
 
 @ib_sync_app.route("/ib/getSyncStatus.do")
