@@ -181,6 +181,7 @@ def _inner_start_1s_sync_helper(contracts):
                 base_req_id, contract, query_time, '%d S' % sync_seconds, '1 secs')
             base_req_id += 1
             if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'pacing' in hist_data[0][3]:
+                logging.warning('%s pacing violation, pausing...' % contract.symbol)
                 tmp_sync_count = 0
                 time.sleep(600)
                 base_req_id += 1
@@ -212,6 +213,7 @@ def _inner_start_1s_sync_helper(contracts):
             query_time = _get_offset_trading_datetime(
                 trading_days, query_time, sync_seconds)
             tmp_sync_count += 1
+            time.sleep(1)
 
 
 def _inner_start_tick_sync_helper(contracts):
