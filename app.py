@@ -10,7 +10,6 @@ app.register_blueprint(ib_sync.ib_sync_app)
 app.register_blueprint(td_sync.td_sync_app)
 DbCache('azero').clear()
 logging.basicConfig(level=logging.DEBUG)
-logging.info('hello, world')
 
 if __name__ == "__main__":
     cfg = get_config('server')

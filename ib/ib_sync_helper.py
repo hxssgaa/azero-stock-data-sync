@@ -1,4 +1,5 @@
 import datetime
+import logging
 from bisect import bisect_left
 
 import db.ib_stock_db as db
@@ -122,19 +123,19 @@ def _inner_start_1m_sync_helper(contracts):
             query_time = _get_offset_trading_day(
                 trading_days, latest_sync_date, sync_days)
         while True:
-            print(contract.symbol, query_time)
+            logging.info(contract.symbol, query_time)
             s1 = time.time()
             hist_data = app.req_historical_data(
                 1000 + i, contract, query_time, '%d D' % sync_days, '30 secs')
             s2 = time.time()
 
             if not hist_data:
-                print('hist data not exists')
+                logging.info('hist data not exists')
                 break
-            print(hist_data[-1], (s2 - s1))
+            logging.info(hist_data[-1], (s2 - s1))
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 31),
                                  hist_data[:-1]))
-            print('%s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            logging.info('%s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                    contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
             db.insert_ib_data(contract.symbol, bson_list)
 
@@ -198,7 +199,7 @@ def _inner_start_1s_sync_helper(contracts):
 
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 32),
                                  hist_data[:-1]))
-            print('%s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            logging.info('%s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                    contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
             db.insert_ib_data(contract.symbol, bson_list)
 
@@ -249,8 +250,8 @@ def _inner_start_tick_sync_helper(contracts):
                 trading_days, hist_tick_data[-1][0], 1)
             bson_data = list(map(_get_ib_tick_bson_data, hist_tick_data))
             db.insert_ib_tick_data(contract.symbol, bson_data)
-            print(bson_data[0])
-            print('%s~%s~%s' % (contract.symbol, hist_tick_data[0][0], hist_tick_data[-1][0]))
+            logging.info(bson_data[0])
+            logging.info('%s~%s~%s' % (contract.symbol, hist_tick_data[0][0], hist_tick_data[-1][0]))
 
             if not hist_tick_data:
                 break
