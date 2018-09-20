@@ -220,12 +220,28 @@ class TestClient(EClient):
 
     def req_historical_ticks(self, req_id, contract, start_date_time, end_date_time, number_of_ticks=1000,
                              what_to_know='TRADES', use_rth=0, ignore_size=True, misc_options=list()):
+        res = []
         hist_ticks = self.wrapper.init_queue('hist_ticks')
 
         self.reqHistoricalTicks(req_id, contract, start_date_time, end_date_time, number_of_ticks, what_to_know,
                                 use_rth, ignore_size, misc_options)
 
-        return hist_ticks
+        while True:
+            data = hist_ticks.get()
+            if data is None:
+                continue
+            if data[1] == 'historical_ticks':
+                res.append(data)
+
+            if data[1] == 'historical_ticks_last':
+                res.append(data)
+                break
+
+            if data[1] == 'error' and data[2] != 2106:
+                res.append(data)
+                break
+
+        return res
 
     def req_head_time_stamp(self, req_id, contract, what_to_know='TRADES', use_rth=0, format_date=1):
 
