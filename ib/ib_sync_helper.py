@@ -129,6 +129,9 @@ def _inner_start_1m_sync_helper(contracts):
                 1000 + i, contract, query_time, '%d D' % sync_days, '30 secs')
             s2 = time.time()
 
+            if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'no data' in hist_data[0][3]:
+                break
+
             if not hist_data:
                 logging.warning('hist data not exists')
                 break
