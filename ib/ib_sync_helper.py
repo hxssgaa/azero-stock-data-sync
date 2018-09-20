@@ -229,7 +229,7 @@ def _inner_start_tick_sync_helper(contracts):
     base_req_id = 100
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_tick_dt_range(contract.symbol)
-        ib_earliest_dt = db.query_ib_earliest_dt(app, 10000 + i, contract)
+        ib_earliest_dt = db.query_ib_earliest_dt(app, 10 + i, contract)
         contract_earliest_time = max('20180601 00:00:00', ib_earliest_dt)
         if not contract_dt_range:
             query_time = contract_earliest_time
@@ -260,7 +260,7 @@ def _inner_start_tick_sync_helper(contracts):
                 query_time = _get_offset_trading_datetime(
                     trading_days, '%s 20:00:00' % query_time.split()[0], 1)
                 continue
-            if hist_tick_data[1] == 'error' and hist_tick_data[2] == 102 and 'Duplicate ticker' in hist_tick_data[3]:
+            if hist_tick_data[1] == 'error':
                 logging.error('Tick ' + str(hist_tick_data))
                 base_req_id += 1
                 continue
@@ -272,7 +272,7 @@ def _inner_start_tick_sync_helper(contracts):
             query_time = _get_offset_trading_datetime(
                 trading_days, hist_tick_data[-1][0], 1)
             bson_data = list(map(_get_ib_tick_bson_data, hist_tick_data))
-            db.insert_ib_tick_data(contract.symbol, bson_data)
+            # db.insert_ib_tick_data(contract.symbol, bson_data)
             logging.warning('Tick %s~%s~%s' % (contract.symbol, hist_tick_data[0][0], hist_tick_data[-1][0]))
 
 
