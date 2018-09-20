@@ -49,6 +49,9 @@ class TestWrapper(EWrapper):
         hist_q = self.get_queue('hist_%d' % req_id)
         if hist_q is not None:
             hist_q.put((req_id, 'error', error_code, error_string))
+        hist_ticks = self.get_queue('hist_ticks')
+        if hist_ticks is not None:
+            hist_q.put((req_id, 'error', error_code, error_string))
 
     def currentTime(self, time_from_server):
         self.get_queue('time').put(time_from_server)
@@ -220,28 +223,12 @@ class TestClient(EClient):
 
     def req_historical_ticks(self, req_id, contract, start_date_time, end_date_time, number_of_ticks=1000,
                              what_to_know='TRADES', use_rth=0, ignore_size=True, misc_options=list()):
-        res = []
         hist_ticks = self.wrapper.init_queue('hist_ticks')
 
         self.reqHistoricalTicks(req_id, contract, start_date_time, end_date_time, number_of_ticks, what_to_know,
                                 use_rth, ignore_size, misc_options)
 
-        while True:
-            data = hist_ticks.get()
-            if data is None:
-                continue
-            if data[1] == 'historical_ticks':
-                res.append(data)
-
-            if data[1] == 'historical_ticks_last':
-                res.append(data)
-                break
-
-            if data[1] == 'error' and data[2] != 2106:
-                res.append(data)
-                break
-
-        return res
+        return hist_ticks.get(timeout=20)
 
     def req_head_time_stamp(self, req_id, contract, what_to_know='TRADES', use_rth=0, format_date=1):
 
