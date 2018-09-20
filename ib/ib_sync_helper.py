@@ -134,6 +134,8 @@ def _inner_start_1m_sync_helper(contracts):
             print(hist_data[-1], (s2 - s1))
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 31),
                                  hist_data[:-1]))
+            print('%s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                   contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
             db.insert_ib_data(contract.symbol, bson_list)
 
             last_date = int_2_date(bson_list[-1]['dt'], is_short=True)
