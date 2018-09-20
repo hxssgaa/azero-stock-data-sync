@@ -235,7 +235,6 @@ def _inner_start_tick_sync_helper(contracts):
         while True:
             if _is_datetime_up_to_date(trading_days, query_time):
                 break
-            print(contract.symbol)
             try:
                 hist_tick_data = app.req_historical_ticks(
                     1000, contract, query_time, '')
