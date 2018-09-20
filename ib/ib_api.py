@@ -51,7 +51,7 @@ class TestWrapper(EWrapper):
             hist_q.put((req_id, 'error', error_code, error_string))
         hist_ticks = self.get_queue('hist_ticks')
         if hist_ticks is not None:
-            hist_q.put((req_id, 'error', error_code, error_string))
+            hist_ticks.put((req_id, 'error', error_code, error_string))
 
     def currentTime(self, time_from_server):
         self.get_queue('time').put(time_from_server)
