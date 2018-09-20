@@ -5,7 +5,7 @@ from utils import get_config
 
 def peek_tick_for_symbol(db, symbol):
     # db['%s-tick' % symbol].delete_many({})
-    tick_data = list(db['%s' % symbol].find({'type': 31}))
+    tick_data = list(db['%s-tick' % symbol].find({}))
     if tick_data:
         print(tick_data[0])
         for e in tick_data[-100:]:
