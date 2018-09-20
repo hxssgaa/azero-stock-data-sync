@@ -123,7 +123,7 @@ def _inner_start_1m_sync_helper(contracts):
             query_time = _get_offset_trading_day(
                 trading_days, latest_sync_date, sync_days)
         while True:
-            logging.info(contract.symbol, query_time)
+            logging.info(str((contract.symbol, query_time)))
             s1 = time.time()
             hist_data = app.req_historical_data(
                 1000 + i, contract, query_time, '%d D' % sync_days, '30 secs')
@@ -132,7 +132,7 @@ def _inner_start_1m_sync_helper(contracts):
             if not hist_data:
                 logging.info('hist data not exists')
                 break
-            logging.info(hist_data[-1], (s2 - s1))
+            logging.info(str((hist_data[-1], (s2 - s1))))
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 31),
                                  hist_data[:-1]))
             logging.info('%s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -250,7 +250,7 @@ def _inner_start_tick_sync_helper(contracts):
                 trading_days, hist_tick_data[-1][0], 1)
             bson_data = list(map(_get_ib_tick_bson_data, hist_tick_data))
             db.insert_ib_tick_data(contract.symbol, bson_data)
-            logging.info(bson_data[0])
+            logging.info(str(bson_data[0]))
             logging.info('%s~%s~%s' % (contract.symbol, hist_tick_data[0][0], hist_tick_data[-1][0]))
 
             if not hist_tick_data:
