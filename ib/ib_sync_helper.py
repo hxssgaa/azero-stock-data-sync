@@ -162,13 +162,13 @@ def _inner_start_1s_sync_helper(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 32)
         contract_earliest_time = max('20180601 00:00:00',
                                      db.query_ib_earliest_dt(app, 10000 + i, contract))
+        latest_sync_date_time = contract_dt_range[1]
+        latest_sync_date_time = (datetime.datetime.strptime(latest_sync_date_time, '%Y%m%d %H:%M:%S')
+                                 + datetime.timedelta(seconds=1)).strftime('%Y%m%d %H:%M:%S')
         if not contract_dt_range:
             query_time = _get_offset_trading_datetime(
                 trading_days, contract_earliest_time, sync_seconds)
         else:
-            latest_sync_date_time = contract_dt_range[1]
-            latest_sync_date_time = (datetime.datetime.strptime(latest_sync_date_time, '%Y%m%d %H:%M:%S')
-                                     + datetime.timedelta(seconds=1)).strftime('%Y%m%d %H:%M:%S')
             query_time = _get_offset_trading_datetime(
                 trading_days, latest_sync_date_time, sync_seconds)
         base_req_id = 3000
@@ -203,6 +203,11 @@ def _inner_start_1s_sync_helper(contracts):
 
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 32),
                                  hist_data[:-1]))
+            if bson_list[0]['dt'] < date_2_int(latest_sync_date_time, is_short=True):
+                logging.warning('1S %s, %s skipped' % (contract.symbol, query_time))
+                query_time = _get_offset_trading_datetime(
+                    trading_days, '%s 20:00:00' % query_time.split()[0], sync_seconds)
+                continue
             logging.warning('1S %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                    contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
             db.insert_ib_data(contract.symbol, bson_list)
