@@ -163,21 +163,20 @@ def _inner_start_1s_sync_helper(contracts):
             latest_sync_date_time = contract_dt_range[1]
             query_time = _get_offset_trading_datetime(
                 trading_days, latest_sync_date_time, sync_seconds + 1)
+        base_req_id = 3000
         while True:
             if tmp_sync_count == 60:
                 tmp_sync_count = 0
                 time.sleep(600)
 
-            print(contract.symbol, query_time)
-            s1 = time.time()
             hist_data = app.req_historical_data(
-                1000 + i, contract, query_time, '%d S' % sync_seconds, '1 secs')
+                base_req_id, contract, query_time, '%d S' % sync_seconds, '1 secs')
+            base_req_id += 1
             if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'pacing' in hist_data[0][3]:
                 tmp_sync_count = 0
                 time.sleep(600)
-                hist_data = app.req_historical_data(
-                    1000 + i, contract, query_time, '%d S' % sync_seconds, '1 secs')
-            s2 = time.time()
+                base_req_id += 1
+                continue
 
             if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'no data' in hist_data[0][3]:
                 query_time = _get_offset_trading_datetime(
@@ -185,14 +184,20 @@ def _inner_start_1s_sync_helper(contracts):
                 if _is_datetime_up_to_date(trading_days, query_time):
                     break
                 tmp_sync_count += 1
+                time.sleep(1)
                 continue
 
-            print(hist_data[-1], (s2 - s1))
+            if hist_data[0][1] == 'error' and hist_data[0][2] == 322 and 'Duplicate ticker' in hist_data[0][3]:
+                base_req_id += 1
+                time.sleep(1)
+                continue
+
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 32),
                                  hist_data[:-1]))
+            print('%s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                   contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
             db.insert_ib_data(contract.symbol, bson_list)
 
-            # last_date = int_2_date(bson_list[-1]['dt'], is_short=True)
             if _is_datetime_up_to_date(trading_days, query_time):
                 break
 
