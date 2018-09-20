@@ -161,8 +161,10 @@ def _inner_start_1s_sync_helper(contracts):
                 trading_days, contract_earliest_time, sync_seconds)
         else:
             latest_sync_date_time = contract_dt_range[1]
+            latest_sync_date_time = (datetime.datetime.strptime(latest_sync_date_time, '%Y%m%d %H:%M:%S')
+                                     + datetime.timedelta(seconds=1)).strftime('%Y%m%d %H:%M:%S')
             query_time = _get_offset_trading_datetime(
-                trading_days, latest_sync_date_time, sync_seconds + 1)
+                trading_days, latest_sync_date_time, sync_seconds)
         base_req_id = 3000
         while True:
             if tmp_sync_count == 60:

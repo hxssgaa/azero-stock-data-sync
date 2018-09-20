@@ -8,7 +8,7 @@ def peek_tick_for_symbol(db, symbol):
     tick_data = list(db['%s' % symbol].find({'type': 32}))
     if tick_data:
         print(tick_data[0])
-        for e in tick_data[:-100]:
+        for e in tick_data[-100:]:
             print(int_2_date(e['dt']))
 
 
