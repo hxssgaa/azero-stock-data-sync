@@ -136,7 +136,6 @@ def _inner_start_1m_sync_helper(contracts):
             if not hist_data:
                 logging.warning('1M hist data not exists')
                 break
-            logging.warning(str((hist_data[-1], (s2 - s1))))
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 31),
                                  hist_data[:-1]))
             logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
