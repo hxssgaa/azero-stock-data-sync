@@ -257,6 +257,7 @@ def _inner_start_tick_sync_helper(contracts):
         '20040123', (datetime.datetime.now() +
                      datetime.timedelta(30)).strftime('%Y%m%d'))
     base_req_id = 100
+    retry_cnt = 0
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_tick_dt_range(contract.symbol)
         ib_earliest_dt = db.query_ib_earliest_dt(app, 10 + i, contract)
@@ -276,10 +277,16 @@ def _inner_start_tick_sync_helper(contracts):
                 hist_tick_data = app.req_historical_ticks(
                     base_req_id, contract, query_time, '')
                 base_req_id += 1
+                retry_cnt = 0
             except queue.Empty:
+                if retry_cnt >= 3:
+                    retry_cnt = 0
+                    logging.warning('%s retry break' % contract.symbol)
+                    break
                 query_time = _get_offset_trading_datetime(trading_days, query_time, 1)
                 logging.warning('Tick %s skipped' % contract.symbol)
                 base_req_id += 1
+                retry_cnt += 1
                 continue
             if hist_tick_data[1] == 'error':
                 logging.warning('Tick ' + str(hist_tick_data))
