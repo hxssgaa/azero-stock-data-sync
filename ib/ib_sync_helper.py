@@ -248,7 +248,6 @@ def _inner_start_1s_sync_helper(contracts):
             query_time = _get_offset_trading_datetime(
                 trading_days, query_time, sync_seconds)
             tmp_sync_count += 1
-            time.sleep(1)
 
 
 def _inner_start_tick_sync_helper(contracts):
