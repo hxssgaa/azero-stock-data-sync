@@ -15,4 +15,4 @@ def peek_tick_for_symbol(db, symbol):
 if __name__ == '__main__':
     cfg = get_config('db')
     db = MongoClient(cfg['DbHost'], int(cfg['DbPort']))['azero-stock']
-    peek_tick_for_symbol(db, 'US.BGNE')
+    peek_tick_for_symbol(db, 'US.EPAM')

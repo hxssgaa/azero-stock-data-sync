@@ -112,6 +112,7 @@ def _inner_start_1m_sync_helper(contracts):
     trading_days = utils.get_trading_days('20040123', (datetime.datetime.now()
                                                        + datetime.timedelta(30)).strftime('%Y%m%d'))
     sync_days = 5
+    base_req_id = 1000
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
         contract_earliest_time = max('20040123 23:59:59',
@@ -127,18 +128,26 @@ def _inner_start_1m_sync_helper(contracts):
             if _is_datetime_up_to_date(trading_days, query_time):
                 break
 
-            logging.warning('1M ' + str((contract.symbol, query_time)))
+            logging.warning('1M ' + contract.symbol + " " + str((contract.symbol, query_time)))
             s1 = time.time()
-            hist_data = app.req_historical_data(
-                1000 + i, contract, query_time, '%d D' % sync_days, '30 secs')
+            hist_data = app.req_historical_data(base_req_id, contract, query_time, '%d D' % sync_days, '30 secs')
+            base_req_id += 1
             s2 = time.time()
 
             if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'no data' in hist_data[0][3]:
+                logging.warning('1M %s no data, skipped')
                 break
 
             if len(hist_data) == 1:
                 logging.warning('1M hist data not exists')
                 break
+
+            if hist_data[0][1] == 'error':
+                base_req_id += 1
+                time.sleep(1)
+                logging.warning('1M %s error: %s' % (contract.symbol, str(hist_data[0])))
+                continue
+
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 31),
                                  hist_data[:-1]))
             logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -147,6 +156,7 @@ def _inner_start_1m_sync_helper(contracts):
 
             last_date = int_2_date(bson_list[-1]['dt'], is_short=True)
             if query_time == datetime.datetime.now().strftime('%Y%m%d 23:59:59'):
+                logging.warning('1M %s %s complete' % (contract.symbol, query_time))
                 break
 
             query_time = _get_offset_trading_day(
@@ -182,6 +192,7 @@ def _inner_start_1s_sync_helper(contracts):
                 time.sleep(600)
 
             if _is_datetime_up_to_date(trading_days, query_time):
+                logging.warning('1S %s update to date' % contract.symbol)
                 break
 
             hist_data = app.req_historical_data(
@@ -198,18 +209,32 @@ def _inner_start_1s_sync_helper(contracts):
                 query_time = _get_offset_trading_datetime(
                     trading_days, query_time, sync_seconds)
                 if _is_datetime_up_to_date(trading_days, query_time):
+                    logging.warning('1S %s update to date' % contract.symbol)
                     break
+                logging.warning('1S %s no data, try another time' % contract.symbol)
                 tmp_sync_count += 1
                 time.sleep(1)
                 continue
 
             if hist_data[0][1] == 'error' and hist_data[0][2] == 322 and 'Duplicate ticker' in hist_data[0][3]:
+                logging.warning('1S %s Duplicate ticker, try again' % contract.symbol)
+                base_req_id += 1
+                time.sleep(1)
+                continue
+
+            if hist_data[0][1] == 'error':
+                logging.warning('1S %s other error:%s, try again' % (contract.symbol, str(hist_data[0])))
                 base_req_id += 1
                 time.sleep(1)
                 continue
 
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 32),
                                  hist_data[:-1]))
+            if not bson_list:
+                base_req_id += 1
+                time.sleep(1)
+                continue
+
             if bson_list[0]['dt'] < date_2_int(latest_sync_date_time, is_short=True):
                 logging.warning('1S %s, %s skipped' % (contract.symbol, query_time))
                 query_time = _get_offset_trading_datetime(
@@ -245,6 +270,7 @@ def _inner_start_tick_sync_helper(contracts):
 
         while True:
             if _is_datetime_up_to_date(trading_days, query_time):
+                logging.warning('Tick %s update to date.' % contract.symbol)
                 break
             try:
                 hist_tick_data = app.req_historical_ticks(
