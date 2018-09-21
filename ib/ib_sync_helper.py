@@ -165,13 +165,14 @@ def _inner_start_1s_sync_helper(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 32)
         contract_earliest_time = max('20180601 00:00:00',
                                      db.query_ib_earliest_dt(app, 10000 + i, contract))
-        latest_sync_date_time = contract_dt_range[1]
-        latest_sync_date_time = (datetime.datetime.strptime(latest_sync_date_time, '%Y%m%d %H:%M:%S')
-                                 + datetime.timedelta(seconds=1)).strftime('%Y%m%d %H:%M:%S')
         if not contract_dt_range:
             query_time = _get_offset_trading_datetime(
                 trading_days, contract_earliest_time, sync_seconds)
+            latest_sync_date_time = contract_earliest_time
         else:
+            latest_sync_date_time = contract_dt_range[1]
+            latest_sync_date_time = (datetime.datetime.strptime(latest_sync_date_time, '%Y%m%d %H:%M:%S')
+                                     + datetime.timedelta(seconds=1)).strftime('%Y%m%d %H:%M:%S')
             query_time = _get_offset_trading_datetime(
                 trading_days, latest_sync_date_time, sync_seconds)
         base_req_id = 3000
@@ -218,6 +219,7 @@ def _inner_start_1s_sync_helper(contracts):
                                    contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
             db.insert_ib_data(contract.symbol, bson_list)
 
+            latest_sync_date_time = query_time
             query_time = _get_offset_trading_datetime(
                 trading_days, query_time, sync_seconds)
             tmp_sync_count += 1
@@ -275,7 +277,7 @@ def _inner_start_tick_sync_helper(contracts):
             query_time = _get_offset_trading_datetime(
                 trading_days, hist_tick_data[-1][0], 1)
             bson_data = list(map(_get_ib_tick_bson_data, hist_tick_data))
-            # db.insert_ib_tick_data(contract.symbol, bson_data)
+            db.insert_ib_tick_data(contract.symbol, bson_data)
             logging.warning('Tick %s~%s~%s' % (contract.symbol, hist_tick_data[0][0], hist_tick_data[-1][0]))
 
 
