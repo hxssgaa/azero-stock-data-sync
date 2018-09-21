@@ -279,13 +279,13 @@ def _inner_start_tick_sync_helper(contracts):
                 base_req_id += 1
                 retry_cnt = 0
             except queue.Empty:
+                base_req_id += 1
                 if retry_cnt >= 3:
                     retry_cnt = 0
                     logging.warning('%s retry break' % contract.symbol)
                     break
                 query_time = _get_offset_trading_datetime(trading_days, query_time, 1)
                 logging.warning('Tick %s skipped' % contract.symbol)
-                base_req_id += 1
                 retry_cnt += 1
                 continue
             if hist_tick_data[1] == 'error':
