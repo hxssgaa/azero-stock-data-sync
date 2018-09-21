@@ -258,9 +258,11 @@ def _inner_start_tick_sync_helper(contracts):
                 logging.warning('Tick ' + str(hist_tick_data))
                 base_req_id += 1
                 continue
-            if not hist_tick_data:
-                logging.warning('Tick %s break' % contract.symbol)
-                break
+            if not hist_tick_data[2]:
+                query_time = _get_offset_trading_datetime(
+                    trading_days, '%s 20:00:00' % query_time.split()[0], 1)
+                logging.warning('Tick %s last, skipped.' % contract.symbol)
+                continue
 
             if hist_tick_data[2]:
                 hist_tick_data = list(map(lambda x: (int_2_date_for_tick(x.time),
