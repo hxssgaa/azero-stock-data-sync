@@ -269,6 +269,7 @@ def _inner_start_tick_sync_helper(contracts):
             query_time = _get_offset_trading_datetime(
                 trading_days, latest_sync_date_time, 1)
 
+        last_synced_time = None
         while True:
             if _is_datetime_up_to_date(trading_days, query_time):
                 logging.warning('Tick %s update to date.' % contract.symbol)
@@ -306,9 +307,15 @@ def _inner_start_tick_sync_helper(contracts):
                                                      x.exchange,
                                                      x.specialConditions), hist_tick_data[2]))
 
+            if hist_tick_data[-1][0] == last_synced_time:
+                last_synced_time = hist_tick_data[-1][0]
+                continue
+
             query_time = _get_offset_trading_datetime(
                 trading_days, hist_tick_data[-1][0], 1)
             bson_data = list(map(_get_ib_tick_bson_data, hist_tick_data))
+
+            last_synced_time = hist_tick_data[-1][0]
             db.insert_ib_tick_data(contract.symbol, bson_data)
             logging.warning('Tick %s~%s~%s' % (contract.symbol, hist_tick_data[0][0], hist_tick_data[-1][0]))
 
