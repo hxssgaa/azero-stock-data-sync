@@ -280,7 +280,7 @@ def _inner_start_tick_sync_helper(contracts):
                 retry_cnt = 0
             except queue.Empty:
                 base_req_id += 1
-                if retry_cnt >= 3:
+                if retry_cnt >= 2:
                     retry_cnt = 0
                     logging.warning('%s retry break' % contract.symbol)
                     break
