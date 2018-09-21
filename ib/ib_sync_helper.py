@@ -135,7 +135,7 @@ def _inner_start_1m_sync_helper(contracts):
             s2 = time.time()
 
             if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'no data' in hist_data[0][3]:
-                logging.warning('1M %s no data, skipped')
+                logging.warning('1M %s no data, skipped' % contract.symbol)
                 break
 
             if len(hist_data) == 1:
