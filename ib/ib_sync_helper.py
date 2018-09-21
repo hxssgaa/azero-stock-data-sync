@@ -189,6 +189,7 @@ def _inner_start_1s_sync_helper(contracts):
         while True:
             if tmp_sync_count == 60:
                 tmp_sync_count = 0
+                logging.warning('1S %s pacing violation, pausing...' % contract.symbol)
                 time.sleep(600)
 
             if _is_datetime_up_to_date(trading_days, query_time):
