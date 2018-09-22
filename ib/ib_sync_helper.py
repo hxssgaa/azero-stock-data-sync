@@ -104,7 +104,7 @@ def _get_offset_trading_datetime(trading_days, dt_str, offset_seconds):
 def _is_datetime_up_to_date(trading_days, dt_str):
     dt_date = datetime.datetime.now().strftime('%Y%m%d')
     index = bisect_left(trading_days, dt_date)
-    return dt_str.split()[0] == trading_days[index]
+    return dt_str.split()[0] >= trading_days[index]
 
 
 def _inner_start_1m_sync_helper(contracts):
@@ -127,18 +127,17 @@ def _inner_start_1m_sync_helper(contracts):
             logging.warning('%s query_ib_earliest_dt failed, waitting to retry...' % contract.symbol)
             time.sleep(5)
 
-        contract_earliest_time = max('20040123 23:59:59', earliest_dt)
         if not contract_dt_range:
             query_time = _get_offset_trading_day(
-                trading_days, contract_earliest_time.split()[0], sync_days - 1)
-            latest_sync_date_time = contract_earliest_time
+                trading_days, earliest_dt.split()[0], sync_days - 1)
         else:
             latest_sync_date = contract_dt_range[1].split()[0]
-            latest_sync_date_time = contract_dt_range[1]
             query_time = _get_offset_trading_day(
                 trading_days, latest_sync_date, sync_days)
+        query_time = max('20040123 23:59:59', query_time)
         while True:
             if _is_datetime_up_to_date(trading_days, query_time):
+                logging.warning('1M %s up to date' % contract.symbol)
                 break
 
             logging.warning('1M ' + contract.symbol + " " + str((contract.symbol, query_time)))
@@ -163,11 +162,6 @@ def _inner_start_1m_sync_helper(contracts):
 
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 31),
                                  hist_data[:-1]))
-            if bson_list[0]['dt'] < date_2_int(latest_sync_date_time, is_short=True):
-                logging.warning('1M %s, %s skipped' % (contract.symbol, query_time))
-                query_time = _get_offset_trading_day(
-                    trading_days, query_time.split()[0], sync_days)
-                continue
 
             logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                    contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
@@ -178,7 +172,6 @@ def _inner_start_1m_sync_helper(contracts):
                 logging.warning('1M %s %s complete' % (contract.symbol, query_time))
                 break
 
-            latest_sync_date_time = query_time
             query_time = _get_offset_trading_day(
                 trading_days, last_date.split()[0], sync_days)
             if query_time > datetime.datetime.now().strftime('%Y%m%d 23:59:59'):
