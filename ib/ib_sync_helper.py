@@ -211,6 +211,7 @@ def _inner_start_1s_sync_helper(contracts):
 
             hist_data = app.req_historical_data(
                 base_req_id, contract, query_time, '%d S' % sync_seconds, '1 secs')
+            time.sleep(1)
             base_req_id += 1
             if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'pacing' in hist_data[0][3]:
                 logging.warning('1S %s pacing violation, pausing...' % contract.symbol)
