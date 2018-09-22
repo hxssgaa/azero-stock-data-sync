@@ -113,10 +113,21 @@ def _inner_start_1m_sync_helper(contracts):
                                                        + datetime.timedelta(30)).strftime('%Y%m%d'))
     sync_days = 5
     base_req_id = 1000
+    tick_base_req_id = 10000
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
-        contract_earliest_time = max('20040123 23:59:59',
-                                     db.query_ib_earliest_dt(app, 10000 + i, contract))
+        while True:
+            if tick_base_req_id > (1 << 30):
+                app = IBApp("10.150.0.2", 4001, 50)
+                tick_base_req_id = 10000
+            earliest_dt = db.query_ib_earliest_dt(app, tick_base_req_id, contract)
+            tick_base_req_id += 1
+            if earliest_dt:
+                break
+            logging.warning('%s query_ib_earliest_dt failed, waitting to retry...' % contract.symbol)
+            time.sleep(5)
+
+        contract_earliest_time = max('20040123 23:59:59', earliest_dt)
         if not contract_dt_range:
             query_time = _get_offset_trading_day(
                 trading_days, contract_earliest_time.split()[0], sync_days - 1)

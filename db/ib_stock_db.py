@@ -60,6 +60,8 @@ def query_ib_earliest_dt(app, req_id, contract):
     :return: Earliest datetime point
     """
     head_time, errors = app.req_head_time_stamp(req_id, contract)
+    if not head_time:
+        return None
     return '%s %s' % (head_time[1].split()[0], head_time[1].split()[1])
 
 
