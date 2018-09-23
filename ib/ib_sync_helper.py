@@ -128,9 +128,11 @@ def _inner_start_1m_sync_helper(contracts):
             time.sleep(5)
 
         if not contract_dt_range:
+            latest_sync_date_time = earliest_dt
             query_time = _get_offset_trading_day(
                 trading_days, earliest_dt.split()[0], sync_days - 1)
         else:
+            latest_sync_date_time = contract_dt_range[1]
             latest_sync_date = contract_dt_range[1].split()[0]
             query_time = _get_offset_trading_day(
                 trading_days, latest_sync_date, sync_days)
@@ -162,10 +164,15 @@ def _inner_start_1m_sync_helper(contracts):
 
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 31),
                                  hist_data[:-1]))
+            latest_sync_date_time_int = date_2_int(latest_sync_date_time, is_short=True)
+            bson_list = list(filter(lambda x: x['dt'] > latest_sync_date_time_int, bson_list))
 
             logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                    contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
-            db.insert_ib_data(contract.symbol, bson_list)
+
+            latest_sync_date_time = '%s %s' % (hist_data[-2][2].date.split()[0], hist_data[-2][2].date.split()[1])
+            if bson_list:
+                db.insert_ib_data(contract.symbol, bson_list)
 
             last_date = int_2_date(bson_list[-1]['dt'], is_short=True)
             if query_time == datetime.datetime.now().strftime('%Y%m%d 23:59:59'):
