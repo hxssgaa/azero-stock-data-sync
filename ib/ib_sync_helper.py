@@ -128,6 +128,7 @@ def _inner_start_1m_sync_helper(contracts):
             time.sleep(5)
 
         if not contract_dt_range:
+            earliest_dt = max('20040123 23:59:59', earliest_dt)
             latest_sync_date_time = earliest_dt
             query_time = _get_offset_trading_day(
                 trading_days, earliest_dt.split()[0], sync_days - 1)
@@ -168,7 +169,8 @@ def _inner_start_1m_sync_helper(contracts):
             bson_list = list(filter(lambda x: x['dt'] > latest_sync_date_time_int, bson_list))
 
             logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                   contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
+                                                contract.symbol, int_2_date(bson_list[0]['dt'], is_short=True),
+                                                int_2_date(bson_list[-1]['dt'], is_short=True)))
 
             latest_sync_date_time = '%s %s' % (hist_data[-2][2].date.split()[0], hist_data[-2][2].date.split()[1])
             if bson_list:
@@ -263,7 +265,7 @@ def _inner_start_1s_sync_helper(contracts):
                     trading_days, '%s 20:00:00' % query_time.split()[0], sync_seconds)
                 continue
             logging.warning('1S %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                   contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
+                                                contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
             db.insert_ib_data(contract.symbol, bson_list)
 
             latest_sync_date_time = query_time
