@@ -313,7 +313,7 @@ def _inner_start_tick_sync_helper(contracts):
                 retry_cnt += 1
                 continue
             if hist_tick_data[1] == 'error':
-                logging.warning('Tick ' + str(hist_tick_data))
+                logging.warning('Tick ' + contract.symbol + ' ' + query_time + ' ' + str(hist_tick_data))
                 base_req_id += 1
                 continue
             if not hist_tick_data[2]:
