@@ -114,6 +114,7 @@ def _inner_start_1m_sync_helper(contracts):
     sync_days = 5
     base_req_id = 1000
     tick_base_req_id = 10000
+    tmp_error_cnt = 0
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
         while True:
@@ -139,28 +140,49 @@ def _inner_start_1m_sync_helper(contracts):
                 trading_days, latest_sync_date, sync_days)
         query_time = max('20040123 23:59:59', query_time)
         while True:
+            if tmp_error_cnt >= 4:
+                app.disconnect()
+                time.sleep(2)
+                app = IBApp("10.150.0.2", 4001, 50)
+                tmp_error_cnt = 0
+                base_req_id = 1000
+                tick_base_req_id = 10000
+                logging.warning('1M %s app has been reset' % contract.symbol)
+
             if _is_datetime_up_to_date(trading_days, query_time):
                 logging.warning('1M %s up to date' % contract.symbol)
+                tmp_error_cnt = 0
                 break
 
             logging.warning('1M ' + contract.symbol + " " + str((contract.symbol, query_time)))
             s1 = time.time()
-            hist_data = app.req_historical_data(base_req_id, contract, query_time, '%d D' % sync_days, '30 secs')
+            try:
+                hist_data = app.req_historical_data(base_req_id, contract, query_time, '%d D' % sync_days, '30 secs')
+            except queue.Empty:
+                base_req_id += 1
+                tmp_error_cnt += 1
+                logging.warning('1M ' + contract.symbol + ' ' + query_time +
+                                ' req historical data timeout, try again...')
+                continue
+
             base_req_id += 1
             s2 = time.time()
 
             if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'no data' in hist_data[0][3]:
-                logging.warning('1M %s no data, skipped' % contract.symbol)
+                logging.warning('1M %s %s no data, skipped' % (contract.symbol, query_time))
+                tmp_error_cnt = 0
                 break
 
             if len(hist_data) == 1:
-                logging.warning('1M hist data not exists')
+                logging.warning('1M %s hist data not exists(%s)' % (contract.symbol, query_time))
+                tmp_error_cnt = 0
                 break
 
             if hist_data[0][1] == 'error':
                 base_req_id += 1
                 time.sleep(1)
-                logging.warning('1M %s error: %s' % (contract.symbol, str(hist_data[0])))
+                logging.warning('1M %s %s error: %s' % (contract.symbol, query_time, str(hist_data[0])))
+                tmp_error_cnt += 1
                 continue
 
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 31),
@@ -171,6 +193,8 @@ def _inner_start_1m_sync_helper(contracts):
             logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                 contract.symbol, int_2_date(bson_list[0]['dt'], is_short=True),
                                                 int_2_date(bson_list[-1]['dt'], is_short=True)))
+            # Clear temp error count.
+            tmp_error_cnt = 0
 
             latest_sync_date_time = '%s %s' % (hist_data[-2][2].date.split()[0], hist_data[-2][2].date.split()[1])
             if bson_list:

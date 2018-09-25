@@ -206,7 +206,7 @@ class TestClient(EClient):
                                use_rth, format_date, keep_up_to_date, chart_options)
 
         while True:
-            data = hist_data.get()
+            data = hist_data.get(timeout=140)
             if data is None:
                 continue
             if data[1] == 'historical_data':
