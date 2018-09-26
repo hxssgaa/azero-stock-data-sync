@@ -240,7 +240,7 @@ def _inner_start_1s_sync_helper(contracts):
                 app = IBApp("10.150.0.2", 4001, 60)
                 tmp_error_cnt = 0
                 base_req_id = 100
-                logging.warning('Tick %s app has been reset' % contract.symbol)
+                logging.warning('1S %s app has been reset' % contract.symbol)
 
             if tmp_sync_count == 60:
                 tmp_sync_count = 0
