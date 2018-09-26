@@ -259,20 +259,34 @@ def get_progress():
         "success": true  // 当前接口是否成功
 
         "data": {
-             "historicalDataProgress": {
-                "HUYA": {  // 股票Symbol
-                    "startDate": "20100410 00:00:00"  // 同步开始时间
-                    "endDate": "20180510 00:00:00"  // 同步结束时间
-                },
-                "currentSyncHistory": [  // 当前同步历史记录，最多显示20条，一条记录即一次得到的同步记录数据
-                    {
-                        "symbol": "AAPL",  // 当前同步的股票symbol
-                        "startDate": "20150410 00:00:00"  // 当前同步开始时间
-                        "endDate": "20150416 00:00:00"  // 当前同步结束时间
-                    }
-                ]
-            }  // 历史股票数据同步进度
+            "1M": {
+                 "histDataSyncTrack": {
+                    "HUYA": {  // 股票Symbol
+                        "startDate": "20100410 00:00:00"  // 同步开始时间
+                        "endDate": "20180510 00:00:00"  // 同步结束时间
+                    },
+                    "syncLogs": [  // 当前同步历史记录，最多显示20条，一条记录即一次得到的同步记录数据
+                        {
+                            "datetime": "20180510 12:00:03",  // log时间
+                            "log": "[US.HUYA] xxxxxxx"  // 同步内容
+                        }
+                    ]
+                }  // 历史股票数据同步轨迹
+                "histDataSyncProgress": 0.4621, // 46.21% 同步进度
+                "syncedSymbols": [{
+                    "symbol": "US.HUYA"
+                }]
+            }, // 分钟级同步数据
+            "1S": {
+                ...
+            }, // 秒级同步数据，格式同上
+            "TICK": {
+                ...
+            } // Tick级同步数据，格式同上
         }
     }
     """
-    pass
+    try:
+        return parse_resp(get_sync_progress_helper())
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)

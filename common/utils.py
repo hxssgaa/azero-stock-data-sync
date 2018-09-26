@@ -163,9 +163,30 @@ class IBProgressTracker(object):
             raise RuntimeError('Progress Type %s not supported' % progress_type)
         self._cache = DbCache('azero-progress-' % progress_type)
 
-    def add_track_progress(self, record):
+    def add_track_record(self, record, symbol):
+        record = '[%s] %s' % (symbol, record)
         records = self._cache.get('records', list())
         records.append(record)
+
+        data = set(self._cache.get('synced_symbols', list()))
+        data.add(symbol)
+        self._cache.put('synced_symbols', list(data))
+
         if len(records) > self.MAX_NUM_SHOW_RECORD:
             del records[0]
         self._cache.put('records', records)
+
+    def get_track_records(self):
+        return self._cache.get('records', list())
+
+    def get_synced_symbols(self):
+        return self._cache.get('synced_symbols', list())
+
+    def update_track_progress(self, progress):
+        progress = float(progress)
+        if progress < 0:
+            progress = 0
+        self._cache.put('progress', progress)
+
+    def get_track_progress(self):
+        return float(self._cache.get('progress', 0))

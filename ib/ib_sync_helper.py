@@ -6,8 +6,7 @@ from bisect import bisect_left
 import db.ib_stock_db as db
 import ib.ib_utils as utils
 import time
-import pdb
-from common.utils import ManagedProcess
+from common.utils import ManagedProcess, IBProgressTracker
 from ib.ib_api import IBApp
 from db.helper import date_2_int, int_2_date, int_2_date_for_tick
 
@@ -115,6 +114,7 @@ def _inner_start_1m_sync_helper(contracts):
     base_req_id = 1000
     tick_base_req_id = 10000
     tmp_error_cnt = 0
+    tracker = IBProgressTracker('1M')
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
         while True:
@@ -126,6 +126,7 @@ def _inner_start_1m_sync_helper(contracts):
             if earliest_dt:
                 break
             logging.warning('%s query_ib_earliest_dt failed, waitting to retry...' % contract.symbol)
+            tracker.add_track_record('Query date range failed, waitting to retry...', contract.symbol)
             time.sleep(5)
 
         if not contract_dt_range:
@@ -148,9 +149,11 @@ def _inner_start_1m_sync_helper(contracts):
                 base_req_id = 1000
                 tick_base_req_id = 10000
                 logging.warning('1M %s app has been reset' % contract.symbol)
+                tracker.add_track_record('App has been reset', contract.symbol)
 
             if _is_datetime_up_to_date(trading_days, query_time):
                 logging.warning('1M %s up to date' % contract.symbol)
+                tracker.add_track_record('Contract up to date', contract.symbol)
                 tmp_error_cnt = 0
                 break
 
@@ -163,6 +166,7 @@ def _inner_start_1m_sync_helper(contracts):
                 tmp_error_cnt += 1
                 logging.warning('1M ' + contract.symbol + ' ' + query_time +
                                 ' req historical data timeout, try again...')
+                tracker.add_track_record(query_time + ' req historical data timeout, try again...', contract.symbol)
                 continue
 
             base_req_id += 1
@@ -171,10 +175,12 @@ def _inner_start_1m_sync_helper(contracts):
             if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'no data' in hist_data[0][3]:
                 logging.warning('1M %s %s no data, skipped' % (contract.symbol, query_time))
                 tmp_error_cnt = 0
+                tracker.add_track_record('%s no data, skipped' % query_time, contract.symbol)
                 break
 
             if len(hist_data) == 1:
                 logging.warning('1M %s hist data not exists(%s)' % (contract.symbol, query_time))
+                tracker.add_track_record('hist data not exists(%s)' % query_time, contract.symbol)
                 tmp_error_cnt = 0
                 break
 
@@ -182,6 +188,7 @@ def _inner_start_1m_sync_helper(contracts):
                 base_req_id += 1
                 time.sleep(1)
                 logging.warning('1M %s %s error: %s' % (contract.symbol, query_time, str(hist_data[0])))
+                tracker.add_track_record('%s error: %s' % (query_time, str(hist_data[0])), contract.symbol)
                 tmp_error_cnt += 1
                 continue
 
@@ -193,6 +200,10 @@ def _inner_start_1m_sync_helper(contracts):
             logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                 contract.symbol, int_2_date(bson_list[0]['dt'], is_short=True),
                                                 int_2_date(bson_list[-1]['dt'], is_short=True)))
+            tracker.add_track_record('SYNC %s~%s~%s->%.2fs' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                                               int_2_date(bson_list[0]['dt'], is_short=True),
+                                                               int_2_date(bson_list[-1]['dt'], is_short=True),
+                                                               float(s2 - s1)), contract.symbol)
             # Clear temp error count.
             tmp_error_cnt = 0
 
@@ -203,6 +214,7 @@ def _inner_start_1m_sync_helper(contracts):
             last_date = int_2_date(bson_list[-1]['dt'], is_short=True)
             if query_time == datetime.datetime.now().strftime('%Y%m%d 23:59:59'):
                 logging.warning('1M %s %s complete' % (contract.symbol, query_time))
+                tracker.add_track_record('%s complete' % query_time, contract.symbol)
                 break
 
             query_time = _get_offset_trading_day(
@@ -218,6 +230,7 @@ def _inner_start_1s_sync_helper(contracts):
     sync_seconds = 1800
     tmp_sync_count = 0
     tmp_error_cnt = 0
+    tracker = IBProgressTracker('1S')
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 32)
         contract_earliest_time = max('20180601 00:00:00',
@@ -241,21 +254,27 @@ def _inner_start_1s_sync_helper(contracts):
                 tmp_error_cnt = 0
                 base_req_id = 100
                 logging.warning('1S %s app has been reset' % contract.symbol)
+                tracker.add_track_record('App has been reset', contract.symbol)
 
             if tmp_sync_count == 60:
                 tmp_sync_count = 0
                 logging.warning('1S %s pacing violation, pausing...' % contract.symbol)
+                tracker.add_track_record('Pacing violation, pausing...', contract.symbol)
                 time.sleep(600)
 
             if _is_datetime_up_to_date(trading_days, query_time):
                 logging.warning('1S %s update to date' % contract.symbol)
+                tracker.add_track_record('Update to date', contract.symbol)
                 break
 
             try:
+                s1 = time.time()
                 hist_data = app.req_historical_data(
                     base_req_id, contract, query_time, '%d S' % sync_seconds, '1 secs')
+                s2 = time.time()
             except queue.Empty:
                 logging.warning('1S %s,%s req historical data timeout, try again...' % (contract.symbol, query_time))
+                tracker.add_track_record('%s req historical data timeout, try again...' % query_time, contract.symbol)
                 tmp_error_cnt += 1
                 base_req_id += 1
                 time.sleep(1)
@@ -264,6 +283,7 @@ def _inner_start_1s_sync_helper(contracts):
             base_req_id += 1
             if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'pacing' in hist_data[0][3]:
                 logging.warning('1S %s pacing violation, pausing...' % contract.symbol)
+                tracker.add_track_record('Pacing violation, pausing...', contract.symbol)
                 tmp_sync_count = 0
                 time.sleep(600)
                 base_req_id += 1
@@ -274,20 +294,25 @@ def _inner_start_1s_sync_helper(contracts):
                     trading_days, query_time, sync_seconds)
                 if _is_datetime_up_to_date(trading_days, query_time):
                     logging.warning('1S %s update to date' % contract.symbol)
+                    tracker.add_track_record('Update to date', contract.symbol)
                     break
                 logging.warning('1S %s no data, try another time' % contract.symbol)
+                tracker.add_track_record('No data found at %s, try another time' % query_time, contract.symbol)
                 tmp_sync_count += 1
                 time.sleep(1)
                 continue
 
             if hist_data[0][1] == 'error' and hist_data[0][2] == 322 and 'Duplicate ticker' in hist_data[0][3]:
                 logging.warning('1S %s Duplicate ticker, try again' % contract.symbol)
+                tracker.add_track_record('Duplicate ticker, try again', contract.symbol)
                 base_req_id += 1
                 time.sleep(1)
                 continue
 
             if hist_data[0][1] == 'error':
                 logging.warning('1S %s other error:%s, try again' % (contract.symbol, str(hist_data[0])))
+                tracker.add_track_record('Other error at %s: %s, try again' %
+                                         (query_time, str(hist_data[0])), contract.symbol)
                 base_req_id += 1
                 tmp_error_cnt += 1
                 time.sleep(1)
@@ -303,11 +328,15 @@ def _inner_start_1s_sync_helper(contracts):
 
             if bson_list[0]['dt'] < date_2_int(latest_sync_date_time, is_short=True):
                 logging.warning('1S %s, %s skipped' % (contract.symbol, query_time))
+                tracker.add_track_record('%s skipped' % query_time, contract.symbol)
                 query_time = _get_offset_trading_datetime(
                     trading_days, '%s 20:00:00' % query_time.split()[0], sync_seconds)
                 continue
             logging.warning('1S %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                 contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
+            tracker.add_track_record('SYNC %s~%s~%s-->%.2f' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                                               hist_data[0][2].date, hist_data[-2][2].date,
+                                                               float(s2 - s1)), contract.symbol)
             db.insert_ib_data(contract.symbol, bson_list)
 
             latest_sync_date_time = query_time
@@ -323,6 +352,7 @@ def _inner_start_tick_sync_helper(contracts):
                      datetime.timedelta(30)).strftime('%Y%m%d'))
     base_req_id = 100
     tmp_error_cnt = 0
+    tracker = IBProgressTracker('TICK')
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_tick_dt_range(contract.symbol)
         ib_earliest_dt = db.query_ib_earliest_dt(app, 10 + i, contract)
@@ -343,23 +373,29 @@ def _inner_start_tick_sync_helper(contracts):
                 tmp_error_cnt = 0
                 base_req_id = 1000
                 logging.warning('Tick %s app has been reset' % contract.symbol)
+                tracker.add_track_record('App has been reset', contract.symbol)
 
             if _is_datetime_up_to_date(trading_days, query_time):
                 logging.warning('Tick %s update to date.' % contract.symbol)
+                tracker.add_track_record('Update to date', contract.symbol)
                 break
             try:
+                s1 = time.time()
                 hist_tick_data = app.req_historical_ticks(
                     base_req_id, contract, query_time, '')
+                s2 = time.time()
                 base_req_id += 1
                 tmp_error_cnt = 0
             except queue.Empty:
                 base_req_id += 1
                 query_time = _get_offset_trading_datetime(trading_days, query_time, 1)
                 logging.warning('Tick %s skipped' % contract.symbol)
+                tracker.add_track_record('%s skipped' % query_time, contract.symbol)
                 tmp_error_cnt += 1
                 continue
             if hist_tick_data[1] == 'error':
                 logging.warning('Tick ' + contract.symbol + ' ' + query_time + ' ' + str(hist_tick_data))
+                tracker.add_track_record('%s %s' % (query_time, str(hist_tick_data)), contract.symbol)
                 base_req_id += 1
                 tmp_error_cnt += 1
                 continue
@@ -367,6 +403,7 @@ def _inner_start_tick_sync_helper(contracts):
                 query_time = _get_offset_trading_datetime(
                     trading_days, '%s 20:00:00' % query_time.split()[0], 1)
                 logging.warning('Tick %s last, skipped.' % contract.symbol)
+                tracker.add_track_record('%s last, skipped' % query_time, contract.symbol)
                 continue
 
             if hist_tick_data[2]:
@@ -388,6 +425,9 @@ def _inner_start_tick_sync_helper(contracts):
             last_synced_time = hist_tick_data[-1][0]
             db.insert_ib_tick_data(contract.symbol, bson_data)
             logging.warning('Tick %s~%s~%s' % (contract.symbol, hist_tick_data[0][0], hist_tick_data[-1][0]))
+            tracker.add_track_record('%s~%s~%s-->%.2f' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                                          hist_tick_data[0][0], hist_tick_data[-1][0],
+                                                          float(s2 - s1)), contract.symbol)
 
 
 def _inner_start_sync_helper(t, contracts):
@@ -422,3 +462,6 @@ def stop_sync_helper(t):
 
     ManagedProcess.remove_process(IB_SYNC_PROCESS_NAME % t)
     return {'status': 0}
+
+def get_sync_progress_helper():
+    pass
