@@ -161,10 +161,11 @@ class IBProgressTracker(object):
         progress_type = progress_type.upper()
         if progress_type not in self.SUPPORTED_TYPES:
             raise RuntimeError('Progress Type %s not supported' % progress_type)
-        self._cache = DbCache('azero-progress-' % progress_type)
+        self._cache = DbCache('azero-progress-%s' % progress_type)
 
     def add_track_record(self, record, symbol):
-        record = '[%s] %s' % (symbol, record)
+        now_dt = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        record = '[%s][%s] %s' % (symbol, now_dt, record)
         records = self._cache.get('records', list())
         records.append(record)
 

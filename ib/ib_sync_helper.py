@@ -157,7 +157,7 @@ def _inner_start_1m_sync_helper(contracts):
                 tmp_error_cnt = 0
                 break
 
-            logging.warning('1M ' + contract.symbol + " " + str((contract.symbol, query_time)))
+            logging.warning('1M ' + str((contract.symbol, query_time)))
             s1 = time.time()
             try:
                 hist_data = app.req_historical_data(base_req_id, contract, query_time, '%d D' % sync_days, '30 secs')
@@ -200,10 +200,9 @@ def _inner_start_1m_sync_helper(contracts):
             logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                 contract.symbol, int_2_date(bson_list[0]['dt'], is_short=True),
                                                 int_2_date(bson_list[-1]['dt'], is_short=True)))
-            tracker.add_track_record('SYNC %s~%s~%s->%.2fs' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                                               int_2_date(bson_list[0]['dt'], is_short=True),
-                                                               int_2_date(bson_list[-1]['dt'], is_short=True),
-                                                               float(s2 - s1)), contract.symbol)
+            tracker.add_track_record('SYNC %s~%s->%.2fs' % (int_2_date(bson_list[0]['dt'], is_short=True),
+                                                            int_2_date(bson_list[-1]['dt'], is_short=True),
+                                                            float(s2 - s1)), contract.symbol)
             # Clear temp error count.
             tmp_error_cnt = 0
 
@@ -334,9 +333,8 @@ def _inner_start_1s_sync_helper(contracts):
                 continue
             logging.warning('1S %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                 contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
-            tracker.add_track_record('SYNC %s~%s~%s-->%.2f' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                                               hist_data[0][2].date, hist_data[-2][2].date,
-                                                               float(s2 - s1)), contract.symbol)
+            tracker.add_track_record('SYNC %s~%s-->%.2f' % (hist_data[0][2].date, hist_data[-2][2].date,
+                                                            float(s2 - s1)), contract.symbol)
             db.insert_ib_data(contract.symbol, bson_list)
 
             latest_sync_date_time = query_time
@@ -425,9 +423,8 @@ def _inner_start_tick_sync_helper(contracts):
             last_synced_time = hist_tick_data[-1][0]
             db.insert_ib_tick_data(contract.symbol, bson_data)
             logging.warning('Tick %s~%s~%s' % (contract.symbol, hist_tick_data[0][0], hist_tick_data[-1][0]))
-            tracker.add_track_record('%s~%s~%s-->%.2f' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                                          hist_tick_data[0][0], hist_tick_data[-1][0],
-                                                          float(s2 - s1)), contract.symbol)
+            tracker.add_track_record('SYNC %s~%s-->%.2f' % (hist_tick_data[0][0], hist_tick_data[-1][0],
+                                                            float(s2 - s1)), contract.symbol)
 
 
 def _inner_start_sync_helper(t, contracts):
@@ -465,4 +462,19 @@ def stop_sync_helper(t):
 
 
 def get_sync_progress_helper():
-    pass
+    res = {}
+    for i, t in enumerate(['1M', '1S', 'TICK']):
+        tracker = IBProgressTracker(t)
+        sync_logs = tracker.get_track_records()
+        sync_logs = list(
+            map(lambda x: {'datetime': ''.join(' '.join(x.split(maxsplit=2)[:-1]).split('][')[1][:-1]),
+                           'log': '[%s] %s' % (''.join(''.join(x.split(maxsplit=2)[:-1]).split('][')[0][1:]),
+                                               x.split(maxsplit=2)[2])}, sync_logs))
+        sync_logs = sorted(sync_logs, key=lambda x: x['datetime'])
+        hist_data_sync_track = {
+            'histDataSyncTrack': {
+                'syncLogs': sync_logs
+            }
+        }
+        res[t] = hist_data_sync_track
+    return {'data': res}
