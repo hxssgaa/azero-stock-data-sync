@@ -217,6 +217,7 @@ def _inner_start_1s_sync_helper(contracts):
                                                        + datetime.timedelta(30)).strftime('%Y%m%d'))
     sync_seconds = 1800
     tmp_sync_count = 0
+    tmp_error_cnt = 0
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 32)
         contract_earliest_time = max('20180601 00:00:00',
@@ -231,8 +232,16 @@ def _inner_start_1s_sync_helper(contracts):
                                      + datetime.timedelta(seconds=1)).strftime('%Y%m%d %H:%M:%S')
             query_time = _get_offset_trading_datetime(
                 trading_days, latest_sync_date_time, sync_seconds)
-        base_req_id = 3000
+        base_req_id = 100
         while True:
+            if tmp_error_cnt >= 4:
+                app.disconnect()
+                time.sleep(2)
+                app = IBApp("10.150.0.2", 4001, 60)
+                tmp_error_cnt = 0
+                base_req_id = 100
+                logging.warning('Tick %s app has been reset' % contract.symbol)
+
             if tmp_sync_count == 60:
                 tmp_sync_count = 0
                 logging.warning('1S %s pacing violation, pausing...' % contract.symbol)
@@ -242,8 +251,15 @@ def _inner_start_1s_sync_helper(contracts):
                 logging.warning('1S %s update to date' % contract.symbol)
                 break
 
-            hist_data = app.req_historical_data(
-                base_req_id, contract, query_time, '%d S' % sync_seconds, '1 secs')
+            try:
+                hist_data = app.req_historical_data(
+                    base_req_id, contract, query_time, '%d S' % sync_seconds, '1 secs')
+            except queue.Empty:
+                logging.warning('1S %s,%s req historical data timeout, try again...' % (contract.symbol, query_time))
+                tmp_error_cnt += 1
+                base_req_id += 1
+                time.sleep(1)
+                continue
             time.sleep(1)
             base_req_id += 1
             if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'pacing' in hist_data[0][3]:
@@ -273,6 +289,7 @@ def _inner_start_1s_sync_helper(contracts):
             if hist_data[0][1] == 'error':
                 logging.warning('1S %s other error:%s, try again' % (contract.symbol, str(hist_data[0])))
                 base_req_id += 1
+                tmp_error_cnt += 1
                 time.sleep(1)
                 continue
 
@@ -281,6 +298,7 @@ def _inner_start_1s_sync_helper(contracts):
             if not bson_list:
                 base_req_id += 1
                 time.sleep(1)
+                tmp_error_cnt += 1
                 continue
 
             if bson_list[0]['dt'] < date_2_int(latest_sync_date_time, is_short=True):
@@ -304,7 +322,7 @@ def _inner_start_tick_sync_helper(contracts):
         '20040123', (datetime.datetime.now() +
                      datetime.timedelta(30)).strftime('%Y%m%d'))
     base_req_id = 100
-    retry_cnt = 0
+    tmp_error_cnt = 0
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_tick_dt_range(contract.symbol)
         ib_earliest_dt = db.query_ib_earliest_dt(app, 10 + i, contract)
@@ -318,6 +336,14 @@ def _inner_start_tick_sync_helper(contracts):
 
         last_synced_time = None
         while True:
+            if tmp_error_cnt >= 4:
+                app.disconnect()
+                time.sleep(2)
+                app = IBApp("10.150.0.2", 4001, 70)
+                tmp_error_cnt = 0
+                base_req_id = 1000
+                logging.warning('Tick %s app has been reset' % contract.symbol)
+
             if _is_datetime_up_to_date(trading_days, query_time):
                 logging.warning('Tick %s update to date.' % contract.symbol)
                 break
@@ -325,20 +351,17 @@ def _inner_start_tick_sync_helper(contracts):
                 hist_tick_data = app.req_historical_ticks(
                     base_req_id, contract, query_time, '')
                 base_req_id += 1
-                retry_cnt = 0
+                tmp_error_cnt = 0
             except queue.Empty:
                 base_req_id += 1
-                if retry_cnt >= 2:
-                    retry_cnt = 0
-                    logging.warning('%s retry break' % contract.symbol)
-                    break
                 query_time = _get_offset_trading_datetime(trading_days, query_time, 1)
                 logging.warning('Tick %s skipped' % contract.symbol)
-                retry_cnt += 1
+                tmp_error_cnt += 1
                 continue
             if hist_tick_data[1] == 'error':
                 logging.warning('Tick ' + contract.symbol + ' ' + query_time + ' ' + str(hist_tick_data))
                 base_req_id += 1
+                tmp_error_cnt += 1
                 continue
             if not hist_tick_data[2]:
                 query_time = _get_offset_trading_datetime(

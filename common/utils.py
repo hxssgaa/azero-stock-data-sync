@@ -150,3 +150,22 @@ class SyncProcessHelper(object):
     @staticmethod
     def get_sync_progress_eta():
         return float(SyncProcessHelper._cache.get('progress_eta', 0))
+
+
+class IBProgressTracker(object):
+    MAX_NUM_SHOW_RECORD = 50
+    SUPPORTED_TYPES = {'1M', '1S', 'TICK'}
+
+    def __init__(self, progress_type):
+        super().__init__()
+        progress_type = progress_type.upper()
+        if progress_type not in self.SUPPORTED_TYPES:
+            raise RuntimeError('Progress Type %s not supported' % progress_type)
+        self._cache = DbCache('azero-progress-' % progress_type)
+
+    def add_track_progress(self, record):
+        records = self._cache.get('records', list())
+        records.append(record)
+        if len(records) > self.MAX_NUM_SHOW_RECORD:
+            del records[0]
+        self._cache.put('records', records)
