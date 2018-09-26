@@ -261,10 +261,6 @@ def get_progress():
         "data": {
             "1M": {
                  "histDataSyncTrack": {
-                    "HUYA": {  // 股票Symbol
-                        "startDate": "20100410 00:00:00"  // 同步开始时间
-                        "endDate": "20180510 00:00:00"  // 同步结束时间
-                    },
                     "syncLogs": [  // 当前同步历史记录，最多显示20条，一条记录即一次得到的同步记录数据
                         {
                             "datetime": "20180510 12:00:03",  // log时间

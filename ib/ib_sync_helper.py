@@ -463,5 +463,6 @@ def stop_sync_helper(t):
     ManagedProcess.remove_process(IB_SYNC_PROCESS_NAME % t)
     return {'status': 0}
 
+
 def get_sync_progress_helper():
     pass
