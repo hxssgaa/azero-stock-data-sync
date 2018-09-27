@@ -245,7 +245,13 @@ def sync_status():
         }
     }
     """
-    pass
+    t = int(request.args.get('type'))
+    try:
+        if t not in SUPPORTED_SYNC_TYPES:
+            return parse_resp({'message': 'Type not supported.'}, False)
+        return parse_resp(get_sync_status_helper(t))
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
 
 
 @ib_sync_app.route("/ib/getProgress.do")

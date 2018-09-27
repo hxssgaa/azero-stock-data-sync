@@ -512,3 +512,7 @@ def get_sync_progress_helper():
         }
         res[t] = hist_data_sync_track
     return {'data': res}
+
+
+def get_sync_status_helper(t):
+    return {'status': int(ManagedProcess.is_process_existed(IB_SYNC_PROCESS_NAME % t))}
