@@ -115,8 +115,11 @@ def _inner_start_1m_sync_helper(contracts):
     tick_base_req_id = 10000
     tmp_error_cnt = 0
     tracker = IBProgressTracker('1M')
+    num_contracts = len(contracts)
+    per_progress = 1 / float(num_contracts)
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
+        progress = i / float(num_contracts)
         while True:
             if tick_base_req_id > (1 << 30):
                 app = IBApp("10.150.0.2", 4001, 50)
@@ -140,6 +143,8 @@ def _inner_start_1m_sync_helper(contracts):
             query_time = _get_offset_trading_day(
                 trading_days, latest_sync_date, sync_days)
         query_time = max('20040123 23:59:59', query_time)
+        first_query_time_int = date_2_int(query_time, is_short=True)
+        end_query_time_int = date_2_int(datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'), is_short=True)
         while True:
             if tmp_error_cnt >= 4:
                 app.disconnect()
@@ -190,6 +195,7 @@ def _inner_start_1m_sync_helper(contracts):
                 logging.warning('1M %s %s error: %s' % (contract.symbol, query_time, str(hist_data[0])))
                 tracker.add_track_record('%s error: %s' % (query_time, str(hist_data[0])), contract.symbol)
                 tmp_error_cnt += 1
+                time.sleep(1)
                 continue
 
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 31),
@@ -197,12 +203,15 @@ def _inner_start_1m_sync_helper(contracts):
             latest_sync_date_time_int = date_2_int(latest_sync_date_time, is_short=True)
             bson_list = list(filter(lambda x: x['dt'] > latest_sync_date_time_int, bson_list))
 
+            progress += (bson_list[-1]['dt'] - first_query_time_int) * per_progress / float(
+                end_query_time_int - first_query_time_int)
             logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                 contract.symbol, int_2_date(bson_list[0]['dt'], is_short=True),
                                                 int_2_date(bson_list[-1]['dt'], is_short=True)))
             tracker.add_track_record('SYNC %s~%s->%.2fs' % (int_2_date(bson_list[0]['dt'], is_short=True),
                                                             int_2_date(bson_list[-1]['dt'], is_short=True),
                                                             float(s2 - s1)), contract.symbol)
+            tracker.update_track_progress(progress)
             # Clear temp error count.
             tmp_error_cnt = 0
 
@@ -230,8 +239,11 @@ def _inner_start_1s_sync_helper(contracts):
     tmp_sync_count = 0
     tmp_error_cnt = 0
     tracker = IBProgressTracker('1S')
+    num_contracts = len(contracts)
+    per_progress = 1 / float(num_contracts)
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 32)
+        progress = i / float(num_contracts)
         contract_earliest_time = max('20180601 00:00:00',
                                      db.query_ib_earliest_dt(app, 10000 + i, contract))
         if not contract_dt_range:
@@ -244,6 +256,8 @@ def _inner_start_1s_sync_helper(contracts):
                                      + datetime.timedelta(seconds=1)).strftime('%Y%m%d %H:%M:%S')
             query_time = _get_offset_trading_datetime(
                 trading_days, latest_sync_date_time, sync_seconds)
+        first_query_time_int = date_2_int(query_time, is_short=True)
+        end_query_time_int = date_2_int(datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'), is_short=True)
         base_req_id = 100
         while True:
             if tmp_error_cnt >= 4:
@@ -325,12 +339,18 @@ def _inner_start_1s_sync_helper(contracts):
                 tmp_error_cnt += 1
                 continue
 
+            tmp_error_cnt = 0
             if bson_list[0]['dt'] < date_2_int(latest_sync_date_time, is_short=True):
                 logging.warning('1S %s, %s skipped' % (contract.symbol, query_time))
                 tracker.add_track_record('%s skipped' % query_time, contract.symbol)
                 query_time = _get_offset_trading_datetime(
                     trading_days, '%s 20:00:00' % query_time.split()[0], sync_seconds)
                 continue
+
+            progress += (bson_list[-1]['dt'] - first_query_time_int) * per_progress / float(
+                end_query_time_int - first_query_time_int)
+            tracker.update_track_progress(progress)
+
             logging.warning('1S %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                 contract.symbol, hist_data[0][2].date, hist_data[-2][2].date))
             tracker.add_track_record('SYNC %s~%s-->%.2f' % (hist_data[0][2].date, hist_data[-2][2].date,
@@ -351,8 +371,11 @@ def _inner_start_tick_sync_helper(contracts):
     base_req_id = 100
     tmp_error_cnt = 0
     tracker = IBProgressTracker('TICK')
+    num_contracts = len(contracts)
+    per_progress = 1 / float(num_contracts)
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_tick_dt_range(contract.symbol)
+        progress = i / float(num_contracts)
         ib_earliest_dt = db.query_ib_earliest_dt(app, 10 + i, contract)
         contract_earliest_time = max('20180601 00:00:00', ib_earliest_dt)
         if not contract_dt_range:
@@ -362,6 +385,8 @@ def _inner_start_tick_sync_helper(contracts):
             query_time = _get_offset_trading_datetime(
                 trading_days, latest_sync_date_time, 1)
 
+        first_query_time_int = date_2_int(query_time, is_short=True)
+        end_query_time_int = date_2_int(datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'), is_short=True)
         last_synced_time = None
         while True:
             if tmp_error_cnt >= 4:
@@ -383,7 +408,6 @@ def _inner_start_tick_sync_helper(contracts):
                     base_req_id, contract, query_time, '')
                 s2 = time.time()
                 base_req_id += 1
-                tmp_error_cnt = 0
             except queue.Empty:
                 app.disconnect()
                 time.sleep(2)
@@ -398,6 +422,7 @@ def _inner_start_tick_sync_helper(contracts):
                 tracker.add_track_record('%s %s' % (query_time, str(hist_tick_data)), contract.symbol)
                 base_req_id += 1
                 tmp_error_cnt += 1
+                time.sleep(1)
                 continue
             if not hist_tick_data[2]:
                 query_time = _get_offset_trading_datetime(
@@ -414,6 +439,7 @@ def _inner_start_tick_sync_helper(contracts):
                                                      x.exchange,
                                                      x.specialConditions), hist_tick_data[2]))
 
+            tmp_error_cnt = 0
             if hist_tick_data[-1][0] == last_synced_time:
                 last_synced_time = hist_tick_data[-1][0]
                 continue
@@ -421,6 +447,9 @@ def _inner_start_tick_sync_helper(contracts):
             query_time = _get_offset_trading_datetime(
                 trading_days, hist_tick_data[-1][0], 1)
             bson_data = list(map(_get_ib_tick_bson_data, hist_tick_data))
+            progress += (bson_data[-1]['dt'] - first_query_time_int) * per_progress / float(
+                end_query_time_int - first_query_time_int)
+            tracker.update_track_progress(progress)
 
             last_synced_time = hist_tick_data[-1][0]
             db.insert_ib_tick_data(contract.symbol, bson_data)
@@ -472,10 +501,13 @@ def get_sync_progress_helper():
             map(lambda x: {'datetime': ''.join(' '.join(x.split(maxsplit=2)[:-1]).split('][')[1][:-1]),
                            'log': '[%s] %s' % (''.join(''.join(x.split(maxsplit=2)[:-1]).split('][')[0][1:]),
                                                x.split(maxsplit=2)[2])}, sync_logs))
+        synced_symbols = map(lambda x: {'symbol': x}, tracker.get_synced_symbols())
         sync_logs = sorted(sync_logs, key=lambda x: x['datetime'])
         hist_data_sync_track = {
             'histDataSyncTrack': {
-                'syncLogs': sync_logs
+                'syncLogs': sync_logs,
+                'histDataSyncProgress': tracker.get_track_progress(),
+                'syncedSymbols': synced_symbols
             }
         }
         res[t] = hist_data_sync_track
