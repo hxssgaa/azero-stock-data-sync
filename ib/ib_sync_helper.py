@@ -385,12 +385,13 @@ def _inner_start_tick_sync_helper(contracts):
                 base_req_id += 1
                 tmp_error_cnt = 0
             except queue.Empty:
-                base_req_id += 1
-                query_time = _get_offset_trading_datetime(trading_days, query_time, 1)
-                logging.warning('Tick %s skipped' % contract.symbol)
-                tracker.add_track_record('%s skipped' % query_time, contract.symbol)
-                tmp_error_cnt += 1
-                time.sleep(1)
+                app.disconnect()
+                time.sleep(2)
+                app = IBApp("10.150.0.2", 4001, 70)
+                tmp_error_cnt = 0
+                base_req_id = 1000
+                logging.warning('Tick %s app has been reset' % contract.symbol)
+                tracker.add_track_record('App has been reset', contract.symbol)
                 continue
             if hist_tick_data[1] == 'error':
                 logging.warning('Tick ' + contract.symbol + ' ' + query_time + ' ' + str(hist_tick_data))
