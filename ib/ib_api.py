@@ -228,7 +228,7 @@ class TestClient(EClient):
         self.reqHistoricalTicks(req_id, contract, start_date_time, end_date_time, number_of_ticks, what_to_know,
                                 use_rth, ignore_size, misc_options)
 
-        return hist_ticks.get()
+        return hist_ticks.get(timeout=80)
 
     def req_head_time_stamp(self, req_id, contract, what_to_know='TRADES', use_rth=0, format_date=1):
 
