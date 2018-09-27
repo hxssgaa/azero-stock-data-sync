@@ -390,6 +390,7 @@ def _inner_start_tick_sync_helper(contracts):
                 logging.warning('Tick %s skipped' % contract.symbol)
                 tracker.add_track_record('%s skipped' % query_time, contract.symbol)
                 tmp_error_cnt += 1
+                time.sleep(1)
                 continue
             if hist_tick_data[1] == 'error':
                 logging.warning('Tick ' + contract.symbol + ' ' + query_time + ' ' + str(hist_tick_data))
