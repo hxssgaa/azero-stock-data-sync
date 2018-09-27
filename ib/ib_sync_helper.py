@@ -119,7 +119,7 @@ def _inner_start_1m_sync_helper(contracts):
     per_progress = 1 / float(num_contracts)
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
-        progress = i / float(num_contracts)
+        base_progress = i / float(num_contracts)
         while True:
             if tick_base_req_id > (1 << 30):
                 app = IBApp("10.150.0.2", 4001, 50)
@@ -203,7 +203,7 @@ def _inner_start_1m_sync_helper(contracts):
             latest_sync_date_time_int = date_2_int(latest_sync_date_time, is_short=True)
             bson_list = list(filter(lambda x: x['dt'] > latest_sync_date_time_int, bson_list))
 
-            progress += (bson_list[-1]['dt'] - first_query_time_int) * per_progress / float(
+            progress = base_progress + (bson_list[-1]['dt'] - first_query_time_int) * per_progress / float(
                 end_query_time_int - first_query_time_int)
             logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                                 contract.symbol, int_2_date(bson_list[0]['dt'], is_short=True),
@@ -243,7 +243,7 @@ def _inner_start_1s_sync_helper(contracts):
     per_progress = 1 / float(num_contracts)
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 32)
-        progress = i / float(num_contracts)
+        base_progress = i / float(num_contracts)
         contract_earliest_time = max('20180601 00:00:00',
                                      db.query_ib_earliest_dt(app, 10000 + i, contract))
         if not contract_dt_range:
@@ -347,7 +347,7 @@ def _inner_start_1s_sync_helper(contracts):
                     trading_days, '%s 20:00:00' % query_time.split()[0], sync_seconds)
                 continue
 
-            progress += (bson_list[-1]['dt'] - first_query_time_int) * per_progress / float(
+            progress = base_progress + (bson_list[-1]['dt'] - first_query_time_int) * per_progress / float(
                 end_query_time_int - first_query_time_int)
             tracker.update_track_progress(progress)
 
@@ -375,7 +375,7 @@ def _inner_start_tick_sync_helper(contracts):
     per_progress = 1 / float(num_contracts)
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_tick_dt_range(contract.symbol)
-        progress = i / float(num_contracts)
+        base_progress = i / float(num_contracts)
         ib_earliest_dt = db.query_ib_earliest_dt(app, 10 + i, contract)
         contract_earliest_time = max('20180601 00:00:00', ib_earliest_dt)
         if not contract_dt_range:
@@ -447,7 +447,7 @@ def _inner_start_tick_sync_helper(contracts):
             query_time = _get_offset_trading_datetime(
                 trading_days, hist_tick_data[-1][0], 1)
             bson_data = list(map(_get_ib_tick_bson_data, hist_tick_data))
-            progress += (bson_data[-1]['dt'] - first_query_time_int) * per_progress / float(
+            progress = base_progress + (bson_data[-1]['dt'] - first_query_time_int) * per_progress / float(
                 end_query_time_int - first_query_time_int)
             tracker.update_track_progress(progress)
 
@@ -501,7 +501,7 @@ def get_sync_progress_helper():
             map(lambda x: {'datetime': ''.join(' '.join(x.split(maxsplit=2)[:-1]).split('][')[1][:-1]),
                            'log': '[%s] %s' % (''.join(''.join(x.split(maxsplit=2)[:-1]).split('][')[0][1:]),
                                                x.split(maxsplit=2)[2])}, sync_logs))
-        synced_symbols = map(lambda x: {'symbol': x}, tracker.get_synced_symbols())
+        synced_symbols = list(map(lambda x: {'symbol': x}, tracker.get_synced_symbols()))
         sync_logs = sorted(sync_logs, key=lambda x: x['datetime'])
         hist_data_sync_track = {
             'histDataSyncTrack': {
