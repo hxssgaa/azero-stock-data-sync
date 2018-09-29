@@ -202,22 +202,21 @@ def _inner_start_1m_sync_helper(contracts):
                                  hist_data[:-1]))
             latest_sync_date_time_int = date_2_int(latest_sync_date_time, is_short=True)
             bson_list = list(filter(lambda x: x['dt'] > latest_sync_date_time_int, bson_list))
-
-            progress = base_progress + (bson_list[-1]['dt'] - first_query_time_int) * per_progress / float(
-                end_query_time_int - first_query_time_int)
-            logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                                contract.symbol, int_2_date(bson_list[0]['dt'], is_short=True),
-                                                int_2_date(bson_list[-1]['dt'], is_short=True)))
-            tracker.add_track_record('SYNC %s~%s->%.2fs' % (int_2_date(bson_list[0]['dt'], is_short=True),
-                                                            int_2_date(bson_list[-1]['dt'], is_short=True),
-                                                            float(s2 - s1)), contract.symbol)
-            tracker.update_track_progress(progress)
             # Clear temp error count.
             tmp_error_cnt = 0
 
             latest_sync_date_time = '%s %s' % (hist_data[-2][2].date.split()[0], hist_data[-2][2].date.split()[1])
             if bson_list:
                 db.insert_ib_data(contract.symbol, bson_list)
+                progress = base_progress + (bson_list[-1]['dt'] - first_query_time_int) * per_progress / float(
+                    end_query_time_int - first_query_time_int)
+                logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                                    contract.symbol, int_2_date(bson_list[0]['dt'], is_short=True),
+                                                    int_2_date(bson_list[-1]['dt'], is_short=True)))
+                tracker.add_track_record('SYNC %s~%s->%.2fs' % (int_2_date(bson_list[0]['dt'], is_short=True),
+                                                                int_2_date(bson_list[-1]['dt'], is_short=True),
+                                                                float(s2 - s1)), contract.symbol)
+                tracker.update_track_progress(progress)
 
             last_date = int_2_date(bson_list[-1]['dt'], is_short=True)
             if query_time == datetime.datetime.now().strftime('%Y%m%d 23:59:59'):
