@@ -121,16 +121,18 @@ def _inner_start_1m_sync_helper(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
         base_progress = i / float(num_contracts)
         while True:
-            if tick_base_req_id > (1 << 30):
-                app = IBApp("10.150.0.2", 4001, 50)
-                tick_base_req_id = 10000
             earliest_dt = db.query_ib_earliest_dt(app, tick_base_req_id, contract)
             tick_base_req_id += 1
             if earliest_dt:
                 break
-            logging.warning('%s query_ib_earliest_dt failed, waitting to retry...' % contract.symbol)
-            tracker.add_track_record('Query date range failed, waitting to retry...', contract.symbol)
-            time.sleep(5)
+            app.disconnect()
+            time.sleep(2)
+            app = IBApp("10.150.0.2", 4001, 50)
+            tmp_error_cnt = 0
+            base_req_id = 1000
+            tick_base_req_id = 10000
+            logging.warning('%s query_ib_earliest_dt failed, app has been reset...' % contract.symbol)
+            tracker.add_track_record('Query date range failed, app has been reset...', contract.symbol)
 
         if not contract_dt_range:
             earliest_dt = max('20040123 23:59:59', earliest_dt)
