@@ -218,7 +218,7 @@ def _inner_start_1m_sync_helper(contracts):
                                                                 float(s2 - s1)), contract.symbol)
                 tracker.update_track_progress(progress)
 
-            last_date = int_2_date(bson_list[-1]['dt'], is_short=True)
+            last_date = int_2_date(bson_list[-1]['dt'], is_short=True) if bson_list else query_time
             if query_time == datetime.datetime.now().strftime('%Y%m%d 23:59:59'):
                 logging.warning('1M %s %s complete' % (contract.symbol, query_time))
                 tracker.add_track_record('%s complete' % query_time, contract.symbol)
