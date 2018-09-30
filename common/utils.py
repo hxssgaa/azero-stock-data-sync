@@ -3,6 +3,8 @@ import multiprocessing
 import json
 import datetime
 
+from pytz import timezone
+
 from db import _db
 from flask import Response
 
@@ -137,7 +139,7 @@ class SyncProcessHelper(object):
         last_progress = float(SyncProcessHelper._cache.get('progress', 0))
         SyncProcessHelper._cache.put('progress', progress)
         last_update_time = int(SyncProcessHelper._cache.get('progress_update_time', 0))
-        now_time = int(datetime.datetime.now().timestamp())
+        now_time = int(datetime.datetime.now(timezone('America/New_York')).timestamp())
         SyncProcessHelper._cache.put('progress_update_time', now_time)
         if last_update_time > 0 and last_progress > 0:
             SyncProcessHelper._cache.put('progress_eta', (1 - progress) * (now_time - last_update_time)
@@ -164,7 +166,7 @@ class IBProgressTracker(object):
         self._cache = DbCache('azero-progress-%s' % progress_type)
 
     def add_track_record(self, record, symbol):
-        now_dt = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        now_dt = datetime.datetime.now(timezone('America/New_York')).strftime('%Y-%m-%d %H:%M:%S')
         record = '[%s][%s] %s' % (symbol, now_dt, record)
         records = self._cache.get('records', list())
         records.append(record)
