@@ -454,7 +454,8 @@ def _inner_start_tick_sync_helper(contracts):
 
             last_synced_time = hist_tick_data[-1][0]
             db.insert_ib_tick_data(contract.symbol, bson_data)
-            logging.warning('Tick %s~%s~%s' % (contract.symbol, hist_tick_data[0][0], hist_tick_data[-1][0]))
+            logging.warning('Tick %s~%d~%s~%s' % (contract.symbol, base_req_id,
+                                                  hist_tick_data[0][0], hist_tick_data[-1][0]))
             tracker.add_track_record('SYNC %s~%s-->%.2f' % (hist_tick_data[0][0], hist_tick_data[-1][0],
                                                             float(s2 - s1)), contract.symbol)
 
