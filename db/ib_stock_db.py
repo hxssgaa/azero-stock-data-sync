@@ -68,8 +68,8 @@ def query_ib_earliest_dt(contract, min_date):
     cnt = _db['US_DAY'].count({'code': symbol})
     if cnt == 0:
         return min_date
-    max(int_2_date(_db['US_DAY'].find({'code': symbol}).sort([('dt', ASCENDING)])
-                   .limit(1).next()['dt']).replace('-', ''), min_date)
+    return max(int_2_date(_db['US_DAY'].find({'code': symbol}).sort([('dt', ASCENDING)])
+                          .limit(1).next()['dt']).replace('-', ''), min_date)
 
 
 def get_ib_sync_symbols():
