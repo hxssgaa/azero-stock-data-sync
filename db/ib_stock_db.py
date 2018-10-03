@@ -51,18 +51,25 @@ def query_ib_tick_dt_range(symbol):
     return tuple(map(lambda x: int_2_date(x, is_short=True), res))
 
 
-def query_ib_earliest_dt(app, req_id, contract):
+def query_ib_earliest_dt(contract, min_date):
     """
     Get earliest datetime point in given symbol
 
-    :param app IBApp
     :param contract: Given contract to query
+    :param min_date: Minimum date of the contract
     :return: Earliest datetime point
     """
-    head_time, errors = app.req_head_time_stamp(req_id, contract)
-    if not head_time:
-        return None
-    return '%s %s' % (head_time[1].split()[0], head_time[1].split()[1])
+    # head_time, errors = app.req_head_time_stamp(req_id, contract)
+    # if not head_time:
+    #     return None
+    symbol = contract.symbol
+    if not symbol.startswith('US.'):
+        symbol = 'US.' % symbol
+    cnt = _db['US_DAY'].count({'code': symbol})
+    if cnt == 0:
+        return min_date
+    max(int_2_date(_db['US_DAY'].find({'code': symbol}).sort([('dt', ASCENDING)])
+                   .limit(1).next()['dt']).replace('-', ''), min_date)
 
 
 def get_ib_sync_symbols():

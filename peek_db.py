@@ -1,11 +1,12 @@
 from db.helper import int_2_date
-from pymongo import MongoClient, DESCENDING
+from pymongo import MongoClient, DESCENDING, ASCENDING
 from utils import get_config
 #
 #
 def peek_tick_for_symbol(db, symbol):
     # db['%s-tick' % symbol].delete_many({})
-    print(db['%s-tick' % symbol].count())
+    print(int_2_date(db['US_DAY'].find({'code': 'US.HUYA'}).sort([('dt', ASCENDING)]).limit(1).next()['dt']))
+    # print(db['%s-tick' % symbol].count())
     # tick_data = list(db['%s' % symbol].find({'type': 31}).sort([('dt', DESCENDING)]).limit(1000))
     # if tick_data:
     #     print(tick_data[0])

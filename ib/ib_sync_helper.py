@@ -120,11 +120,7 @@ def _inner_start_1m_sync_helper(contracts):
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
         base_progress = i / float(num_contracts)
-        try:
-            earliest_dt = db.query_ib_earliest_dt(app, tick_base_req_id, contract)
-        except queue.Empty:
-            tracker.add_track_record('query_ib_earliest_dt failed...Use guess data.', contract.symbol)
-            earliest_dt = '20040123 23:59:59'
+        earliest_dt = db.query_ib_earliest_dt(contract, '20040123 23:59:59')
 
         if not contract_dt_range:
             earliest_dt = max('20040123 23:59:59', earliest_dt)
@@ -238,8 +234,7 @@ def _inner_start_1s_sync_helper(contracts):
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 32)
         base_progress = i / float(num_contracts)
-        contract_earliest_time = max('20180601 00:00:00',
-                                     db.query_ib_earliest_dt(app, 10000 + i, contract))
+        contract_earliest_time = db.query_ib_earliest_dt(contract, '20180601 00:00:00')
         if not contract_dt_range:
             query_time = _get_offset_trading_datetime(
                 trading_days, contract_earliest_time, sync_seconds)
@@ -370,8 +365,7 @@ def _inner_start_tick_sync_helper(contracts):
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_tick_dt_range(contract.symbol)
         base_progress = i / float(num_contracts)
-        ib_earliest_dt = db.query_ib_earliest_dt(app, 10 + i, contract)
-        contract_earliest_time = max('20180601 00:00:00', ib_earliest_dt)
+        contract_earliest_time = db.query_ib_earliest_dt(contract, '20180601 00:00:00')
         if not contract_dt_range:
             query_time = contract_earliest_time
         else:
