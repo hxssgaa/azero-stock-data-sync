@@ -64,7 +64,7 @@ def query_ib_earliest_dt(contract, min_date):
     #     return None
     symbol = contract.symbol
     if not symbol.startswith('US.'):
-        symbol = 'US.' % symbol
+        symbol = 'US.%s' % symbol
     cnt = _db['US_DAY'].count({'code': symbol})
     if cnt == 0:
         return min_date
