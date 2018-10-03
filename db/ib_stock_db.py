@@ -114,3 +114,10 @@ def insert_ib_tick_data(symbol, rows):
     if not existed:
         _db[symbol].create_index([('dt', ASCENDING)])
     return len(res.inserted_ids)
+
+
+def insert_ib_rt_data(data_queue, req_id_symbol_map):
+    while not data_queue.empty():
+        dt = data_queue.get()
+        symbol = req_id_symbol_map[dt[0]]
+        print(dt)

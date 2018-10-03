@@ -120,19 +120,11 @@ def _inner_start_1m_sync_helper(contracts):
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
         base_progress = i / float(num_contracts)
-        while True:
+        try:
             earliest_dt = db.query_ib_earliest_dt(app, tick_base_req_id, contract)
-            tick_base_req_id += 1
-            if earliest_dt:
-                break
-            app.disconnect()
-            time.sleep(2)
-            app = IBApp("10.150.0.2", 4001, 50)
-            tmp_error_cnt = 0
-            base_req_id = 1000
-            tick_base_req_id = 10000
-            logging.warning('%s query_ib_earliest_dt failed, app has been reset...' % contract.symbol)
-            tracker.add_track_record('Query date range failed, app has been reset...', contract.symbol)
+        except queue.Empty:
+            tracker.add_track_record('query_ib_earliest_dt failed...Use guess data.', contract.symbol)
+            earliest_dt = '20040123 23:59:59'
 
         if not contract_dt_range:
             earliest_dt = max('20040123 23:59:59', earliest_dt)
@@ -183,7 +175,8 @@ def _inner_start_1m_sync_helper(contracts):
                 logging.warning('1M %s %s no data, skipped' % (contract.symbol, query_time))
                 tmp_error_cnt = 0
                 tracker.add_track_record('%s no data, skipped' % query_time, contract.symbol)
-                break
+                query_time = _get_offset_trading_day(trading_days, query_time.split()[0], sync_days)
+                continue
 
             if len(hist_data) == 1:
                 logging.warning('1M %s hist data not exists(%s)' % (contract.symbol, query_time))
@@ -409,7 +402,7 @@ def _inner_start_tick_sync_helper(contracts):
                     base_req_id, contract, query_time, '')
                 s2 = time.time()
                 base_req_id += 1
-            except queue.Empty:
+            except Exception:
                 app.disconnect()
                 time.sleep(2)
                 app = IBApp("10.150.0.2", 4001, 70)
@@ -455,16 +448,35 @@ def _inner_start_tick_sync_helper(contracts):
             last_synced_time = hist_tick_data[-1][0]
             db.insert_ib_tick_data(contract.symbol, bson_data)
             logging.warning('Tick %s~%d~%s~%s~%s' % (contract.symbol, base_req_id, query_time,
-                                                  hist_tick_data[0][0], hist_tick_data[-1][0]))
+                                                     hist_tick_data[0][0], hist_tick_data[-1][0]))
             tracker.add_track_record('SYNC %s~%s-->%.2f' % (hist_tick_data[0][0], hist_tick_data[-1][0],
                                                             float(s2 - s1)), contract.symbol)
+
+
+def _inner_start_realtime_sync_helper(contracts):
+    pass
+    # if not contracts:
+    #     return
+    # q = queue.Queue()
+    # app = IBApp("10.150.0.2", 4001, 80)
+    #
+    # def _handler(data):
+    #     q.put(data)
+    #
+    # req_id_symbol_map = {}
+    # for i, contract in enumerate(contracts):
+    #     app.req_market_data(1000 + i, contract, _handler, generic_tick_list='236')
+    #     req_id_symbol_map[1000 + i] = contract.symbol
+    #
+    # db.insert_ib_rt_data(q, req_id_symbol_map)
 
 
 def _inner_start_sync_helper(t, contracts):
     return {
         0: _inner_start_1m_sync_helper,
         1: _inner_start_1s_sync_helper,
-        2: _inner_start_tick_sync_helper
+        2: _inner_start_tick_sync_helper,
+        3: _inner_start_realtime_sync_helper
     }.get(t)(contracts)
 
 

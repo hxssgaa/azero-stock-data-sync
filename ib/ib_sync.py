@@ -5,7 +5,7 @@ from common.utils import parse_resp
 from ib.ib_sync_helper import *
 
 ib_sync_app = Blueprint('ib_sync_app', __name__)
-SUPPORTED_SYNC_TYPES = [0, 1, 2]
+SUPPORTED_SYNC_TYPES = [0, 1, 2, 3]
 
 
 @ib_sync_app.route("/ib/getSyncSymbols.do")
