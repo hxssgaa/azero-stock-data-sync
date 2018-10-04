@@ -432,6 +432,9 @@ def _inner_start_tick_sync_helper(contracts):
                 last_synced_time = hist_tick_data[-1][0]
                 continue
 
+            logging.warning('Tick %s:%s-->%s-->%s' % (contract.symbol, query_time, hist_tick_data[-1][0],
+                                                      _get_offset_trading_datetime(
+                                                          trading_days, hist_tick_data[-1][0], 1)))
             query_time = _get_offset_trading_datetime(
                 trading_days, hist_tick_data[-1][0], 1)
             bson_data = list(map(_get_ib_tick_bson_data, hist_tick_data))
