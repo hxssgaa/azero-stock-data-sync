@@ -1,4 +1,5 @@
 import time
+import logging
 from collections import defaultdict
 
 from db import _db
@@ -142,7 +143,7 @@ def _insert_ib_rt_data(symbol, rows, tracker):
     symbol = '%s-real' % symbol
     _db[symbol].insert_many(rows)
     tracker.add_track_record('Inserted %d data' % len(rows), symbol.replace('US.', ''))
-    print('%s inserted: %d' % (symbol, len(rows)))
+    logging.warning('%s inserted: %d' % (symbol, len(rows)))
 
 
 def insert_ib_rt_data(data_queue, req_id_symbol_map, tracker):
