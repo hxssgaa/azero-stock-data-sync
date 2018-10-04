@@ -448,21 +448,22 @@ def _inner_start_tick_sync_helper(contracts):
 
 
 def _inner_start_realtime_sync_helper(contracts):
-    pass
-    # if not contracts:
-    #     return
-    # q = queue.Queue()
-    # app = IBApp("10.150.0.2", 4001, 80)
-    #
-    # def _handler(data):
-    #     q.put(data)
-    #
-    # req_id_symbol_map = {}
-    # for i, contract in enumerate(contracts):
-    #     app.req_market_data(1000 + i, contract, _handler, generic_tick_list='236')
-    #     req_id_symbol_map[1000 + i] = contract.symbol
-    #
-    # db.insert_ib_rt_data(q, req_id_symbol_map)
+    if not contracts:
+        return
+    tracker = IBProgressTracker('REAL')
+    contracts.append(utils.get_usd_contract())
+    q = queue.Queue()
+    app = IBApp("10.150.0.2", 4001, 80)
+
+    def _handler(data):
+        q.put(data)
+
+    req_id_symbol_map = {}
+    for i, contract in enumerate(contracts):
+        app.req_market_data(1000 + i, contract, _handler, generic_tick_list='236')
+        req_id_symbol_map[1000 + i] = contract.symbol
+
+    db.insert_ib_rt_data(q, req_id_symbol_map, tracker)
 
 
 def _inner_start_sync_helper(t, contracts):
@@ -502,7 +503,7 @@ def stop_sync_helper(t):
 
 def get_sync_progress_helper():
     res = {}
-    for i, t in enumerate(['1M', '1S', 'TICK']):
+    for i, t in enumerate(['1M', '1S', 'TICK', 'REAL']):
         tracker = IBProgressTracker(t)
         sync_logs = tracker.get_track_records()
         sync_logs = list(

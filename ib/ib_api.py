@@ -6,6 +6,8 @@ from ibapi.contract import *
 from ibapi.common import *
 from threading import Thread
 from ibapi.ticktype import *
+from pytz import timezone
+
 from ib.ib_utils import *
 import datetime
 import queue
@@ -61,22 +63,22 @@ class TestWrapper(EWrapper):
 
     def tickPrice(self, req_id: TickerId, tick_type: TickType, price: float, attrib: TickAttrib):
         super().tickPrice(req_id, tick_type, price, attrib)
-        now_date = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+        now_date = datetime.datetime.now(tz=timezone('America/New_York')).strftime("%Y-%m-%d %H:%M:%S")
         self.get_queue('mkt_%d' % req_id).put((req_id, 'tick_price', now_date, tick_type, price, attrib))
 
     def tickSize(self, req_id: TickerId, tick_type: TickType, size: int):
         super().tickSize(req_id, tick_type, size)
-        now_date = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+        now_date = datetime.datetime.now(tz=timezone('America/New_York')).strftime("%Y-%m-%d %H:%M:%S")
         self.get_queue('mkt_%d' % req_id).put((req_id, 'tick_size', now_date, tick_type, size))
 
     def tickString(self, req_id: TickerId, tick_type: TickType, value: str):
         super().tickString(req_id, tick_type, value)
-        now_date = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+        now_date = datetime.datetime.now(tz=timezone('America/New_York')).strftime("%Y-%m-%d %H:%M:%S")
         self.get_queue('mkt_%d' % req_id).put((req_id, 'tick_string', now_date, tick_type, value))
 
     def tickGeneric(self, req_id: TickerId, tick_type: TickType, value: float):
         super().tickGeneric(req_id, tick_type, value)
-        now_date = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+        now_date = datetime.datetime.now(tz=timezone('America/New_York')).strftime("%Y-%m-%d %H:%M:%S")
         self.get_queue('mkt_%d' % req_id).put((req_id, 'tick_generic', now_date, tick_type, value))
 
     def historicalData(self, reqId: int, bar: BarData):

@@ -156,7 +156,7 @@ class SyncProcessHelper(object):
 
 class IBProgressTracker(object):
     MAX_NUM_SHOW_RECORD = 50
-    SUPPORTED_TYPES = {'1M', '1S', 'TICK'}
+    SUPPORTED_TYPES = {'1M', '1S', 'TICK', 'REAL'}
 
     def __init__(self, progress_type):
         super().__init__()

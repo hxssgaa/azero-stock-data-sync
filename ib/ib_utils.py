@@ -23,6 +23,15 @@ def make_contract(symbol, exchange):
     return contract
 
 
+def get_usd_contract():
+    contract = Contract()
+    contract.symbol = 'USD'
+    contract.secType = "CASH"
+    contract.currency = "CNH"
+    contract.exchange = 'IDEALPRO'
+    return contract
+
+
 def format_bar_date(bar_date):
     return '%s %s' % (bar_date.split()[0], bar_date.split()[1])
 

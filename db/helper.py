@@ -9,7 +9,7 @@ def int_2_date(int_date, is_short=False):
 
 
 def int_2_date_for_tick(int_date):
-    return (datetime.datetime.utcfromtimestamp(int_date) - datetime.timedelta(hours=4))\
+    return (datetime.datetime.utcfromtimestamp(int_date) - datetime.timedelta(hours=4)) \
         .strftime('%Y%m%d %H:%M:%S')
 
 
@@ -18,3 +18,9 @@ def date_2_int(date_str, is_short=False):
         return int(datetime.datetime.strptime(date_str, "%Y%m%d %H:%M:%S").timestamp())
     else:
         return int(datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").timestamp())
+
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]

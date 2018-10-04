@@ -1,5 +1,8 @@
+import time
+from collections import defaultdict
+
 from db import _db
-from db.helper import int_2_date
+from db.helper import int_2_date, date_2_int, chunks
 from db.td_stock_db import create_index, collection_names
 from pymongo import ASCENDING, DESCENDING
 
@@ -7,6 +10,7 @@ from ib.ib_api import IBApp
 
 IB_SYNC_SYMBOLS_COLLECTION_NAME = 'IB_SYNC_SYMBOLS'
 IB_SYNC_METADATA_COLLECTION_NAME = 'IB_SYNC_METADATA'
+IB_SYNC_REALTIME_TIME_GAP = 30
 
 
 def query_ib_data_dt_range(symbol, t):
@@ -123,8 +127,35 @@ def insert_ib_tick_data(symbol, rows):
     return len(res.inserted_ids)
 
 
-def insert_ib_rt_data(data_queue, req_id_symbol_map):
-    while not data_queue.empty():
+def _get_bson(line):
+    return {
+        'dt': date_2_int(line[2]),
+        'tick_type': int(line[3]),
+        'tick_info': float(line[4]) if 0 <= int(line[3]) <= 9 else line[4]
+    }
+
+
+def _insert_ib_rt_data(symbol, rows, tracker):
+    if not symbol.startswith('US.'):
+        symbol = 'US.%s' % symbol
+
+    symbol = '%s-real' % symbol
+    _db[symbol].insert_many(rows)
+    tracker.add_track_record('Inserted %d data' % len(rows), symbol.replace('US.', ''))
+    print('%s inserted: %d' % (symbol, len(rows)))
+
+
+def insert_ib_rt_data(data_queue, req_id_symbol_map, tracker):
+    data_map = defaultdict(list)
+    last_sync_time = time.time()
+    while True:
         dt = data_queue.get()
+        current_time = time.time()
+        if current_time - last_sync_time > IB_SYNC_REALTIME_TIME_GAP:
+            for symbol in data_map.keys():
+                _insert_ib_rt_data(symbol, data_map[symbol], tracker)
+            last_sync_time = current_time
+            data_map.clear()
         symbol = req_id_symbol_map[dt[0]]
-        print(dt)
+        bson_data = _get_bson(dt)
+        data_map[symbol].append(bson_data)
