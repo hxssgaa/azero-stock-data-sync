@@ -445,6 +445,7 @@ def _inner_start_tick_sync_helper(contracts):
                                                      hist_tick_data[0][0], hist_tick_data[-1][0]))
             tracker.add_track_record('SYNC %s~%s-->%.2f' % (hist_tick_data[0][0], hist_tick_data[-1][0],
                                                             float(s2 - s1)), contract.symbol)
+            time.sleep(1)
 
 
 def _inner_start_realtime_sync_helper(contracts):
