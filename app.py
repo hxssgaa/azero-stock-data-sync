@@ -1,3 +1,11 @@
+try:
+  import googleclouddebugger
+  googleclouddebugger.enable(
+    module='azero-stock-data-sync',
+    version='0.1-SNAPSHOT'
+  )
+except ImportError:
+  pass
 import logging
 from ib import ib_sync
 from td import td_sync

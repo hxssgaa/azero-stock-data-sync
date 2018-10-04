@@ -1,4 +1,4 @@
-FROM python:3.5
+FROM python:3.6
 
 WORKDIR /azero-stock-data-sync
 
@@ -9,6 +9,7 @@ RUN pip install pymongo
 RUN apt-get update
 RUN apt-get install wget
 RUN apt-get install unzip
+RUN pip install google-python-cloud-debugger
 RUN pip install pandas_market_calendars
 RUN wget http://interactivebrokers.github.io/downloads/twsapi_macunix.973.07.zip
 RUN unzip twsapi_macunix.973.07.zip
