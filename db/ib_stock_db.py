@@ -160,3 +160,7 @@ def insert_ib_rt_data(data_queue, req_id_symbol_map, tracker):
         symbol = req_id_symbol_map[dt[0]]
         bson_data = _get_bson(dt)
         data_map[symbol].append(bson_data)
+
+
+def get_db_size_info():
+    return _db.command("dbstats")

@@ -1,32 +1,30 @@
 from flask import Blueprint, Response
+
+from common.utils import parse_resp
+from meta.meta_helper import get_sync_size_info_helper
 from utils import *
 
 meta_app = Blueprint('meta_app', __name__)
 
 
-@meta_app.route("/meta/getMachineMetadata")
+@meta_app.route("/meta/getSyncSizeInfo.do")
 @gzipped
-def get_machine_metadata():
+def get_sync_size_info():
     """
-    get machine metadata.
+    Get how much capacity used in syncing.
 
     :return:
     {
         "success": true  // 当前接口是否成功
         "data": {
             "capacity": {
-                "ib": {   // IB的容量数据
-                    "historicalData": "42G"  // 历史股票数据占用了42G
-                } // 当前已同步或者需要同步的股票数据
-                "futu": {
-                    "historicalData": "200G"  // 富涂数据占用了200G
-                }
-                "td": {
-                    "historicalData"： "90G"  // TD数据占用了90G
-                }
+                "usedSize": 120527912960.0,  // 磁盘占有的空间
+                "totalSize": 315993423872.0   // 磁盘总共的空间
             }
         }
     }
     """
-
-    pass
+    try:
+        return parse_resp(get_sync_size_info_helper())
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
