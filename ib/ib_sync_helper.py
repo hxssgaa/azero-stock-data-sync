@@ -234,7 +234,7 @@ def _inner_start_1s_sync_helper(contracts):
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 32)
         base_progress = i / float(num_contracts)
-        contract_earliest_time = db.query_ib_earliest_dt(contract, '20180601 00:00:00')
+        contract_earliest_time = db.query_ib_earliest_dt(contract, '20180701 00:00:00')
         if not contract_dt_range:
             query_time = _get_offset_trading_datetime(
                 trading_days, contract_earliest_time, sync_seconds)
@@ -307,6 +307,15 @@ def _inner_start_1s_sync_helper(contracts):
             if hist_data[0][1] == 'error' and hist_data[0][2] == 322 and 'Duplicate ticker' in hist_data[0][3]:
                 logging.warning('1S %s Duplicate ticker, try again' % contract.symbol)
                 tracker.add_track_record('Duplicate ticker, try again', contract.symbol)
+                base_req_id += 1
+                time.sleep(1)
+                continue
+
+            if hist_data[0][1] == 'error' and hist_data[0][2] == 162 and 'Starting time must occur' in hist_data[0][3]:
+                logging.warning('1S %s Starting error:%s, try again' % (contract.symbol, str(hist_data[0])))
+                tracker.add_track_record('Starting error error at %s: %s, try again' %
+                                         (query_time, str(hist_data[0])), contract.symbol)
+                query_time = _get_offset_trading_day(trading_days, query_time.split()[0], 1)
                 base_req_id += 1
                 time.sleep(1)
                 continue
