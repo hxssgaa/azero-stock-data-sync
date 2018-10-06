@@ -102,6 +102,8 @@ def _get_offset_trading_datetime(trading_days, dt_str, offset_seconds):
 
 def _is_datetime_up_to_date(trading_days, dt_str):
     dt_date = datetime.datetime.now().strftime('%Y%m%d')
+    if dt_str.split()[0] > dt_str:
+        return True
     index = bisect_left(trading_days, dt_date)
     return dt_str.split()[0] >= trading_days[index]
 
@@ -112,7 +114,6 @@ def _inner_start_1m_sync_helper(contracts):
                                                        + datetime.timedelta(30)).strftime('%Y%m%d'))
     sync_days = 5
     base_req_id = 1000
-    tick_base_req_id = 10000
     tmp_error_cnt = 0
     tracker = IBProgressTracker('1M')
     num_contracts = len(contracts)
@@ -142,7 +143,6 @@ def _inner_start_1m_sync_helper(contracts):
                 app = IBApp("10.150.0.2", 4001, 50)
                 tmp_error_cnt = 0
                 base_req_id = 1000
-                tick_base_req_id = 10000
                 logging.warning('1M %s app has been reset' % contract.symbol)
                 tracker.add_track_record('App has been reset', contract.symbol)
 
@@ -174,19 +174,20 @@ def _inner_start_1m_sync_helper(contracts):
                 query_time = _get_offset_trading_day(trading_days, query_time.split()[0], sync_days)
                 continue
 
-            if len(hist_data) == 1:
-                logging.warning('1M %s hist data not exists(%s)' % (contract.symbol, query_time))
-                tracker.add_track_record('hist data not exists(%s)' % query_time, contract.symbol)
-                tmp_error_cnt = 0
-                break
-
             if hist_data[0][1] == 'error':
                 base_req_id += 1
-                time.sleep(1)
                 logging.warning('1M %s %s error: %s' % (contract.symbol, query_time, str(hist_data[0])))
                 tracker.add_track_record('%s error: %s' % (query_time, str(hist_data[0])), contract.symbol)
                 tmp_error_cnt += 1
                 time.sleep(1)
+                continue
+
+            if len(hist_data) == 1:
+                base_req_id += 1
+                logging.warning('1M %s hist data not exists(%s)' % (contract.symbol, query_time))
+                tracker.add_track_record('hist data not exists(%s)' % query_time, contract.symbol)
+                query_time = _get_offset_trading_day(trading_days, query_time.split()[0], 200)
+                tmp_error_cnt = 0
                 continue
 
             bson_list = list(map(lambda x: _get_ib_bson_data(x, 31),

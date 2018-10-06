@@ -1,12 +1,15 @@
 from db.helper import int_2_date
 from pymongo import MongoClient, DESCENDING, ASCENDING
 from utils import get_config
+from db.ib_stock_db import query_ib_data_dt_range
 
 
 #
 #
 def peek_tick_for_symbol(db, symbol):
-    print(db.command("dbstats"))
+    print(db['US.BRK.B'].find().limit(1).next())
+    # print(query_ib_data_dt_range('BRK', 31))
+    # print(db.command("dbstats"))
     # db['%s-tick' % symbol].delete_many({})
     # print(db['US.CSCO-tick'].find().sort([('dt', DESCENDING)]).limit(10000))
     # print(db['%s-tick' % symbol].count())

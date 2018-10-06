@@ -204,8 +204,12 @@ class TestClient(EClient):
 
         hist_data = self.wrapper.init_queue('hist_%d' % req_id)
 
+        # Filter dot representation of symbol, replace it with space.
+        temp_symbol = contract.symbol
+        contract.symbol = temp_symbol.replace('.', ' ')
         self.reqHistoricalData(req_id, contract, query_time, duration, bar_size_setting, what_to_know,
                                use_rth, format_date, keep_up_to_date, chart_options)
+        contract.symbol = temp_symbol
 
         while True:
             data = hist_data.get(timeout=140)
@@ -227,8 +231,11 @@ class TestClient(EClient):
                              what_to_know='TRADES', use_rth=0, ignore_size=True, misc_options=list()):
         hist_ticks = self.wrapper.init_queue('hist_ticks')
 
+        temp_symbol = contract.symbol
+        contract.symbol = temp_symbol.replace('.', ' ')
         self.reqHistoricalTicks(req_id, contract, start_date_time, end_date_time, number_of_ticks, what_to_know,
                                 use_rth, ignore_size, misc_options)
+        contract.symbol = temp_symbol
 
         return hist_ticks.get(timeout=80)
 
