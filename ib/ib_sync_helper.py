@@ -234,7 +234,7 @@ def _inner_start_1s_sync_helper(contracts):
     for i, contract in enumerate(contracts):
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 32)
         base_progress = i / float(num_contracts)
-        contract_earliest_time = db.query_ib_earliest_dt(contract, '20180701 00:00:00')
+        contract_earliest_time = db.query_ib_earliest_dt(contract, '20180702 00:00:00')
         if not contract_dt_range:
             query_time = _get_offset_trading_datetime(
                 trading_days, contract_earliest_time, sync_seconds)
