@@ -2,6 +2,7 @@ import time
 import logging
 from collections import defaultdict
 
+from common.utils import StockUtils
 from db import _db
 from db.helper import int_2_date, date_2_int, chunks
 from db.td_stock_db import create_index, collection_names
@@ -78,7 +79,10 @@ def query_ib_earliest_dt(contract, min_date):
 
 
 def get_ib_sync_symbols():
-    return list(_db[IB_SYNC_SYMBOLS_COLLECTION_NAME].find({}, {'_id': False}))
+    stock_infos = StockUtils.get_stock_infos()
+    res_list = list(_db[IB_SYNC_SYMBOLS_COLLECTION_NAME].find({}, {'_id': False}))
+    symbol_set = set(e['symbol'] for e in res_list)
+    return list(filter(lambda x: x['symbol'] in symbol_set, stock_infos))
 
 
 def insert_ib_sync_symbols(symbols):
