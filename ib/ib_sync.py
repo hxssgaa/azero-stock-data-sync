@@ -13,16 +13,19 @@ SUPPORTED_SYNC_TYPES = [0, 1, 2, 3]
 def get_sync_symbols():
     """
     get symbols which has been or need syncing.
+    :request
+    code=US.AAPL  // 股票代码
+    type=0  // 类型
 
     :return:
     {
         "success": true  // 当前接口是否成功
         "data": {
-            "codeList": [  // symbol列表
+            "stocks": [  // symbol列表
                 {
                     "symbol": "US.HUYA",  // 股票代码
                     "title": "虎牙",  // 公司名称
-                    "date": "1969-12-31"  // 交易所日期
+                    "date": "1969-12-31"  // 交易所日期,
                 },
                 {
                     "symbol": "US.HMI",  // 股票代码
@@ -30,11 +33,19 @@ def get_sync_symbols():
                     "date": "1969-12-31"  // 交易所日期
                 },
             ],
+            "syncInfo": {
+                "startDate": "2016-01-28 00:00:00",
+                "endDate": "2018-01-28 00:00:00"
+            } // 同步信息
         }
     }
     """
     try:
-        return parse_resp(get_sync_symbols_data_helper())
+        code = request.args.get('code')
+        t = request.args.get('type')
+        if t is not None:
+            t = int(t)
+        return parse_resp(get_sync_symbols_data_helper(code, t))
     except Exception as e:
         return parse_resp({'message': str(e)}, False)
 

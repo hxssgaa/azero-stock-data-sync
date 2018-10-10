@@ -13,10 +13,22 @@ from db.helper import date_2_int, int_2_date, int_2_date_for_tick
 IB_SYNC_PROCESS_NAME = 'IB_%d'
 
 
-def get_sync_symbols_data_helper():
-    return {
+def get_sync_symbols_data_helper(code, t):
+    res = {
         'stocks': list(db.get_ib_sync_symbols())
     }
+    if code and t is not None:
+        dt_range = None
+        if t in [0, 1]:
+            dt_range = db.query_ib_data_dt_range(code, t + 31)
+        elif t == 2:
+            dt_range = db.query_ib_tick_dt_range(code)
+        if dt_range:
+            res['syncInfo'] = {
+                'startDate': dt_range[0],
+                'endDate': dt_range[1]
+            }
+    return res
 
 
 def _get_ib_bson_data(hist_data, t):
@@ -55,7 +67,7 @@ def insert_sync_symbols_data_helper(symbols):
     if not symbols:
         return {}
     db.insert_ib_sync_symbols(symbols)
-    return get_sync_symbols_data_helper()
+    return get_sync_symbols_data_helper(None, None)
 
 
 def get_sync_metadata_helper():
