@@ -8,7 +8,10 @@ class TDBaseApi(object):
         self.api_key = api_key
 
     def make_request(self, url, params=None):
-        res = r.get(url, params=params).content.decode('utf-8')
+        try:
+            res = r.get(url, params=params).content.decode('utf-8')
+        except Exception:
+            return None
         try:
             return json.loads(res)
         except Exception:

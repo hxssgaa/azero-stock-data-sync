@@ -38,7 +38,7 @@ def _filter_symbol_data(symbol_data):
     right = []
     wrong = []
     for data in symbol_data:
-        if ('empty' in data[2] and data[2]['empty']) or 'candles' not in data[2]:
+        if not data or ('empty' in data[2] and data[2]['empty']) or 'candles' not in data[2]:
             wrong.append(data)
         else:
             right.append(data)
@@ -133,7 +133,6 @@ def _sync_symbol_data(quote_api, symbol_queue, parallel_cnt=25):
                 'syncDateTime': datetime.datetime.now(timezone('America/New_York')).strftime('%Y-%m-%d %H:%M:%S')
             })
 
-        logging.warning('TD right:%s, wrong:%s' % (str(right), str(wrong)))
         SyncProcessHelper.update_sync_progress(1 - symbol_queue.qsize() / float(total_cnt))
 
 
