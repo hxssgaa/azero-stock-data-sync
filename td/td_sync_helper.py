@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import logging
 
 from pytz import timezone
 
@@ -132,6 +133,7 @@ def _sync_symbol_data(quote_api, symbol_queue, parallel_cnt=25):
                 'syncDateTime': datetime.datetime.now(timezone('America/New_York')).strftime('%Y-%m-%d %H:%M:%S')
             })
 
+        logging.warning('TD right:%s, wrong:%s' % (str(right), str(wrong)))
         SyncProcessHelper.update_sync_progress(1 - symbol_queue.qsize() / float(total_cnt))
 
 
