@@ -168,6 +168,9 @@ class IBProgressTracker(object):
     def add_track_record(self, record, symbol):
         now_dt = datetime.datetime.now(timezone('America/New_York')).strftime('%Y-%m-%d %H:%M:%S')
         record = '[%s][%s] %s' % (symbol, now_dt, record)
+        if symbol == 'EXP':
+            return
+
         records = self._cache.get('records', list())
         records.append(record)
 
