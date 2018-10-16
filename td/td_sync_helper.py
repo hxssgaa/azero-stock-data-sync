@@ -56,16 +56,19 @@ async def async_symbol_data(quote_api, symbol_queue, parallel_cnt=25):
             symbol_api = symbol
         dt_latest = query_latest_td_data(symbol, TYPE_MAP[frequency])
         _start_date = dt_latest if dt_latest else start_date
-        return symbol, frequency, quote_api.get_history_quotes(symbol_api, start_date=_start_date, period=1,
-                                                               period_type='day',
-                                                               frequency_type='minute', frequency=frequency,
-                                                               need_extended_hours_data=True), times + 1
+        res = quote_api.get_history_quotes(symbol_api, start_date=_start_date, period=1,
+                                           period_type='day',
+                                           frequency_type='minute', frequency=frequency,
+                                           need_extended_hours_data=True)
+
+        return symbol, frequency, res, times + 1
 
     symbols = []
     for _ in range(parallel_cnt):
         if symbol_queue.empty():
             break
         symbols.append(symbol_queue.get())
+    logging.warning('TD synced: %s' % str(list(map(lambda x: '%s-%s' % (x[0], x[1]), symbols))))
 
     futures = [
         loop.run_in_executor(
@@ -134,6 +137,7 @@ def _sync_symbol_data(quote_api, symbol_queue, parallel_cnt=25):
             })
 
         SyncProcessHelper.update_sync_progress(1 - symbol_queue.qsize() / float(total_cnt))
+    SyncProcessHelper.update_sync_progress(1)
 
 
 def start_sync_helper(symbols):

@@ -4,12 +4,14 @@ from td.td_utils import *
 
 
 class TDBaseApi(object):
+    TIMEOUT = 60
+
     def __init__(self, api_key):
         self.api_key = api_key
 
     def make_request(self, url, params=None):
         try:
-            res = r.get(url, params=params).content.decode('utf-8')
+            res = r.get(url, params=params, timeout=self.TIMEOUT).content.decode('utf-8')
         except Exception:
             return None
         try:
