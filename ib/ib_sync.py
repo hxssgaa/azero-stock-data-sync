@@ -240,6 +240,26 @@ def stop_sync():
         return parse_resp({'message': str(e)}, False)
 
 
+@ib_sync_app.route("/ib/getCurrentTime.do")
+@gzipped
+def get_current_time():
+    """
+    Get current time
+
+    :return:
+    {
+        "success": true  // 当前接口是否成功
+        "data": {
+            "time": 123123131 //获取当前时间
+        }
+    }
+    """
+    try:
+        return parse_resp(get_current_time_helper())
+    except Exception as e:
+        return parse_resp({'message': str(e)}, False)
+
+
 @ib_sync_app.route("/ib/getSyncStatus.do")
 @gzipped
 def sync_status():

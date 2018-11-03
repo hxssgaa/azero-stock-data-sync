@@ -68,6 +68,20 @@ class ManagedProcess(object):
         return name in ManagedProcess._process_map
 
 
+class ManagedCache(object):
+    _cache = {}
+
+    @staticmethod
+    def put(key, value):
+        if key not in ManagedCache._cache:
+            ManagedCache._cache[key] = value
+        return ManagedCache._cache[key]
+
+    @staticmethod
+    def get(key):
+        return ManagedCache._cache[key]
+
+
 class DbCache(object):
     def __init__(self, name):
         self.name = 'cache_%s' % name

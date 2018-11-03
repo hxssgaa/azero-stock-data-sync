@@ -6,7 +6,7 @@ from bisect import bisect_left
 import db.ib_stock_db as db
 import ib.ib_utils as utils
 import time
-from common.utils import ManagedProcess, IBProgressTracker
+from common.utils import ManagedProcess, IBProgressTracker, ManagedCache
 from ib.ib_api import IBApp
 from db.helper import date_2_int, int_2_date, int_2_date_for_tick
 
@@ -515,7 +515,6 @@ def _inner_start_sync_helper(t, contracts):
         3: _inner_start_realtime_sync_helper
     }.get(t)(contracts)
 
-
 def start_sync_helper(t):
     t = int(t)
     symbols = list(db.get_ib_sync_symbols())
@@ -566,3 +565,13 @@ def get_sync_progress_helper():
 
 def get_sync_status_helper(t):
     return {'status': int(ManagedProcess.is_process_existed(IB_SYNC_PROCESS_NAME % t))}
+
+
+def get_current_time_helper():
+    app = ManagedCache.put(IB_SYNC_PROCESS_NAME % 500, IBApp("10.150.0.2", 4001, 500))
+    time = None
+    for _ in range(3):
+        time, _ = app.req_cur_time()
+        if time is not None:
+            break
+    return {'time': time}

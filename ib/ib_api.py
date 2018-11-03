@@ -161,7 +161,7 @@ class TestClient(EClient):
         self.reqCurrentTime()
 
         try:
-            cur_time = time_storage.get(timeout=self.MAX_WAIT_SECONDS)
+            cur_time = time_storage.get(timeout=5)
         except queue.Empty:
             print("Exceeded maximum wait for wrapper to respond")
             cur_time = None
