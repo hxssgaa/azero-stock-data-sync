@@ -571,7 +571,11 @@ def get_current_time_helper():
     app = ManagedCache.put(IB_SYNC_PROCESS_NAME % 500, IBApp("10.150.0.2", 4001, 500))
     time = None
     for _ in range(3):
-        time, _ = app.req_cur_time()
+        try:
+            time, _ = app.req_cur_time()
+        except Exception:
+            time = None
+            app = IBApp("10.150.0.2", 4001, 500)
         if time is not None:
             break
     return {'time': time}
