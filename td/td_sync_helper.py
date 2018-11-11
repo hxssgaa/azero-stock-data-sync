@@ -146,7 +146,7 @@ def start_sync_helper(symbols):
 
     asyncio.set_event_loop(asyncio.new_event_loop())
     for i, symbol in enumerate(symbols):
-        for freq in ['1', '5', '10', '15', '30']:
+        for freq in ['1']:
             q.put((symbol, freq, 1))
 
     _sync_symbol_data(quote_api, q)
