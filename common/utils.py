@@ -155,7 +155,7 @@ class SyncProcessHelper(object):
         last_update_time = int(SyncProcessHelper._cache.get('progress_update_time', 0))
         now_time = int(datetime.datetime.now(timezone('America/New_York')).timestamp())
         SyncProcessHelper._cache.put('progress_update_time', now_time)
-        if last_update_time > 0 and last_progress > 0:
+        if last_update_time > 0 and 0 < last_progress < progress:
             SyncProcessHelper._cache.put('progress_eta', (1 - progress) * (now_time - last_update_time)
                                          / (progress - last_progress))
 
