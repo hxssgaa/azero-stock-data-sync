@@ -58,6 +58,7 @@ def sync_1M():
                                                        + datetime.timedelta(30)).strftime('%Y%m%d'))
     sync_days = 5
     base_req_id = 1000
+    tmp_error_cnt = 0
     num_contracts = len(contracts)
     for i, contract in enumerate(contracts[:5]):
         db.download_db(contract.symbol)
