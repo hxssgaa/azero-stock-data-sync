@@ -13,8 +13,7 @@ DB_PATH = r'C:\Users\paperspace\Documents\tmp_stock_data'
 def sync_1M():
     db = LiteDB(DB_PATH)
     symbols = db.get_sync_symbols(SyncTypesEnum.TYPE_1M)
-    contracts = [utils.make_contract(
-        symbol['symbol'], 'SMART') for symbol in symbols]
+    contracts = [utils.make_contract(symbol, 'SMART') for symbol in symbols]
     app = IBApp("localhost", 4001, 50)
     trading_days = utils.get_trading_days('20040123', (datetime.datetime.now()
                                                        + datetime.timedelta(30)).strftime('%Y%m%d'))

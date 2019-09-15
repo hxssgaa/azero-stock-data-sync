@@ -29,9 +29,18 @@ class LiteDB(object):
         if not symbol.startswith('US.'):
             symbol = 'US.%s' % symbol
         full_path = self._get_path_for_symbol(symbol)
-        if symbol not in stock_index:
-            return os.path.join(self.db_path, '%s.db' % symbol)
-        stock_index[symbol].GetContentFile(full_path)
+        symbol_key = '%s.db' % symbol
+        if symbol_key not in stock_index:
+            conn = sqlite3.connect(full_path)
+            conn.execute('''CREATE TABLE stocks 
+                            (dt text, open real, close real, high real, low real, volume real, 
+                            pe real, average real, type int)''')
+            conn.execute('''CREATE INDEX stocks_dt_idx ON stocks(dt)''')
+            conn.commit()
+            conn.close()
+            print('stock %s has been created' % symbol)
+            return full_path
+        stock_index[symbol_key].GetContentFile(full_path)
         return full_path
 
     def query_ib_data_dt_range(self, symbol: str, t: int):
