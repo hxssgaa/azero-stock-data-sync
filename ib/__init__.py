@@ -2,7 +2,8 @@ from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
 _gauth = GoogleAuth()
-_gauth.CommandLineAuth()
+_gauth.LocalWebserverAuth()
+
 
 drive = GoogleDrive(_gauth)
 stock_index = {e['title']: e for e in drive.ListFile(
