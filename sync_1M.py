@@ -75,7 +75,7 @@ def sync_1M():
             latest_sync_date_time = contract_dt_range[1]
             latest_sync_date = contract_dt_range[1].split()[0]
             query_time = _get_offset_trading_day(
-                trading_days, latest_sync_date, sync_days - 1)
+                trading_days, latest_sync_date, sync_days)
         query_time = max('20040123 23:59:59', query_time)
         first_query_time_int = date_2_int(query_time, is_short=True)
         end_query_time_int = date_2_int(datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'), is_short=True)
