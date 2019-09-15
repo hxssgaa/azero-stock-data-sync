@@ -71,7 +71,7 @@ def _is_datetime_up_to_date(trading_days, dt_str):
 
 def sync_1S():
     db = LiteDB(DB_PATH)
-    symbols = db.get_sync_symbols(SyncTypesEnum.TYPE_1M)
+    symbols = db.get_sync_symbols(SyncTypesEnum.TYPE_1S)
     contracts = [utils.make_contract(symbol, 'SMART') for symbol in symbols]
 
     app = IBApp("localhost", 4001, 60)
