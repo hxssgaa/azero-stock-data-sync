@@ -48,7 +48,7 @@ class LiteDB(object):
             symbol = 'US.%s' % symbol
         conn = sqlite3.connect(self._get_path_for_symbol(symbol))
         count = [e for e in conn.execute('select count(*) from stocks where type=%d' % t)]
-        if count[0] == 0:
+        if count[0][0] == 0:
             return None
-        return [e for e in conn.execute('select dt from stocks where type=%d order by dt asc' % t)][0], \
-               [e for e in conn.execute('select dt from stocks where type=%d order by dt desc' % t)][0]
+        return [e for e in conn.execute('select dt from stocks where type=%d order by dt asc' % t)][0][0], \
+               [e for e in conn.execute('select dt from stocks where type=%d order by dt desc' % t)][0][0]
