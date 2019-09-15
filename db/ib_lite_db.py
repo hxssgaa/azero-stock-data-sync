@@ -52,8 +52,10 @@ class LiteDB(object):
         count = [e for e in conn.execute('select count(*) from stocks where type=%d' % t)]
         if count[0][0] == 0:
             return None
-        return [e for e in conn.execute('select dt from stocks where type=%d order by dt asc' % t)][0][0], \
-               [e for e in conn.execute('select dt from stocks where type=%d order by dt desc' % t)][0][0]
+        return [e for e in conn.execute('select dt from stocks where type=%d order by dt asc' % t)][0][0] \
+                   .replace('-', ''), \
+               [e for e in conn.execute('select dt from stocks where type=%d order by dt desc' % t)][0][0] \
+                   .replace('-', '')
 
     def query_ib_earliest_dt(self, app, symbol, min_date):
         time_s = app.req_head_time_stamp(1, symbol)
