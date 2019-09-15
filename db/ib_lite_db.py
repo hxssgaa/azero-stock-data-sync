@@ -29,6 +29,8 @@ class LiteDB(object):
         if not symbol.startswith('US.'):
             symbol = 'US.%s' % symbol
         full_path = self._get_path_for_symbol(symbol)
+        if os.path.exists(full_path):
+            return full_path
         symbol_key = '%s.db' % symbol
         if symbol_key not in stock_index:
             conn = sqlite3.connect(full_path)
@@ -52,3 +54,7 @@ class LiteDB(object):
             return None
         return [e for e in conn.execute('select dt from stocks where type=%d order by dt asc' % t)][0][0], \
                [e for e in conn.execute('select dt from stocks where type=%d order by dt desc' % t)][0][0]
+
+    def query_ib_earliest_dt(self, app, symbol, min_date):
+        time_s = app.req_head_time_stamp(1, symbol)
+        return max('%s %s' % (time_s[0][1].split()[0], time_s[0][1].split()[1]), min_date)
