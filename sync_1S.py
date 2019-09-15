@@ -74,7 +74,7 @@ def sync_1S():
     symbols = db.get_sync_symbols(SyncTypesEnum.TYPE_1M)
     contracts = [utils.make_contract(symbol, 'SMART') for symbol in symbols]
 
-    app = IBApp("10.150.0.2", 4001, 60)
+    app = IBApp("localhost", 4001, 60)
     trading_days = utils.get_trading_days('20040123', (datetime.datetime.now()
                                                        + datetime.timedelta(30)).strftime('%Y%m%d'))
     sync_seconds = 1800
@@ -106,7 +106,7 @@ def sync_1S():
             if tmp_error_cnt >= 4:
                 app.disconnect()
                 time.sleep(2)
-                app = IBApp("10.150.0.2", 4001, 60)
+                app = IBApp("localhost", 4001, 60)
                 tmp_error_cnt = 0
                 base_req_id = 100
                 print('1S %s app has been reset' % contract.symbol)

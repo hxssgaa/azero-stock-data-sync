@@ -86,7 +86,7 @@ def sync_1M():
             if tmp_error_cnt >= 4:
                 app.disconnect()
                 time.sleep(2)
-                app = IBApp("10.150.0.2", 4001, 50)
+                app = IBApp("localhost", 4001, 50)
                 tmp_error_cnt = 0
                 base_req_id = 1000
                 print('1M %s app has been reset' % contract.symbol)
