@@ -58,12 +58,14 @@ def sync_1M():
                                                        + datetime.timedelta(30)).strftime('%Y%m%d'))
     sync_days = 5
     base_req_id = 1000
+    base_td = 1
     tmp_error_cnt = 0
     num_contracts = len(contracts)
     for i, contract in enumerate(contracts[:5]):
         db.download_db(contract.symbol)
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
-        earliest_dt = db.query_ib_earliest_dt(app, contract, '20040123 23:59:59')
+        earliest_dt = db.query_ib_earliest_dt(base_td, app, contract, '20040123 23:59:59')
+        base_td += 1
         print(contract_dt_range)
 
         if not contract_dt_range:

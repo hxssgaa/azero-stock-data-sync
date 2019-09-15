@@ -58,8 +58,8 @@ class LiteDB(object):
                [e for e in conn.execute('select dt from stocks where type=%d order by dt desc' % t)][0][0] \
                    .replace('-', '')
 
-    def query_ib_earliest_dt(self, app, symbol, min_date):
-        time_s = app.req_head_time_stamp(1, symbol)
+    def query_ib_earliest_dt(self, base_td, app, symbol, min_date):
+        time_s = app.req_head_time_stamp(base_td, symbol)
         return max('%s %s' % (time_s[0][1].split()[0], time_s[0][1].split()[1]), min_date)
 
     def insert_ib_data(self, conn, symbol, rows):
