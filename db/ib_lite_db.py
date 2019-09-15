@@ -73,9 +73,9 @@ class LiteDB(object):
         full_path = self._get_path_for_symbol(symbol)
         if conn is None:
             conn = sqlite3.connect(full_path)
+        self._update_rows_datetime(rows)
         sq_rows = [(e['dt'], e['open'], e['close'], e['high'], e['low'],
                             e['volume'], e['pe'], e.get('average', -1), e['type']) for e in rows]
-        self._update_rows_datetime(sq_rows)
         conn.executemany('''
                         INSERT INTO stocks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', sq_rows)
