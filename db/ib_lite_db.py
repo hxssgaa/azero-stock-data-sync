@@ -3,6 +3,7 @@ import sqlite3
 
 from enum import Enum
 
+from db.helper import int_2_date
 from ib import drive, stock_index
 
 
@@ -61,6 +62,10 @@ class LiteDB(object):
         time_s = app.req_head_time_stamp(1, symbol)
         return max('%s %s' % (time_s[0][1].split()[0], time_s[0][1].split()[1]), min_date)
 
+    def _update_rows_datetime(self, rows):
+        for row in rows:
+            row['dt'] = int_2_date(row['dt'])
+
     def insert_ib_data(self, conn, symbol, rows):
         if not symbol.startswith('US.'):
             symbol = 'US.%s' % symbol
@@ -70,6 +75,7 @@ class LiteDB(object):
             conn = sqlite3.connect(full_path)
         sq_rows = [(e['dt'], e['open'], e['close'], e['high'], e['low'],
                             e['volume'], e['pe'], e.get('average', -1), e['type']) for e in rows]
+        self._update_rows_datetime(sq_rows)
         conn.executemany('''
                         INSERT INTO stocks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', sq_rows)
