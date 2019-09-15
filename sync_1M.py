@@ -79,6 +79,7 @@ def sync_1M():
         query_time = max('20040123 23:59:59', query_time)
         first_query_time_int = date_2_int(query_time, is_short=True)
         end_query_time_int = date_2_int(datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'), is_short=True)
+        previous_conn = None
         while True:
             if tmp_error_cnt >= 4:
                 app.disconnect()
@@ -137,19 +138,13 @@ def sync_1M():
 
             latest_sync_date_time = '%s %s' % (hist_data[-2][2].date.split()[0], hist_data[-2][2].date.split()[1])
             if bson_list:
-                # TODO: fix this
-                pass
-                # db.insert_ib_data(contract.symbol, bson_list)
+                conn = db.insert_ib_data(previous_conn, contract.symbol, bson_list)
+                previous_conn = conn
                 # progress = base_progress + (bson_list[-1]['dt'] - first_query_time_int) * per_progress / float(
                 #     end_query_time_int - first_query_time_int)
-                # logging.warning('1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                #                                     contract.symbol, int_2_date(bson_list[0]['dt'], is_short=True),
-                #                                     int_2_date(bson_list[-1]['dt'], is_short=True)))
-                # tracker.add_track_record('SYNC %s~%s->%.2fs' % (int_2_date(bson_list[0]['dt'], is_short=True),
-                #                                                 int_2_date(bson_list[-1]['dt'], is_short=True),
-                #                                                 float(s2 - s1)), contract.symbol)
-                # tracker.update_track_progress(progress)
-
+                print('SYNC 1M %s~%s~%s~%s' % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                                    contract.symbol, int_2_date(bson_list[0]['dt'], is_short=True),
+                                                    int_2_date(bson_list[-1]['dt'], is_short=True)))
             last_date = int_2_date(bson_list[-1]['dt'], is_short=True) if bson_list else query_time
             if query_time == datetime.datetime.now().strftime('%Y%m%d 23:59:59'):
                 print('1M %s %s complete' % (contract.symbol, query_time))
@@ -159,6 +154,8 @@ def sync_1M():
                 trading_days, last_date.split()[0], sync_days)
             if query_time > datetime.datetime.now().strftime('%Y%m%d 23:59:59'):
                 query_time = datetime.datetime.now().strftime('%Y%m%d 23:59:59')
+        if previous_conn:
+            previous_conn.close()
     print(symbols)
 
 

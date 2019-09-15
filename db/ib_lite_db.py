@@ -60,3 +60,18 @@ class LiteDB(object):
     def query_ib_earliest_dt(self, app, symbol, min_date):
         time_s = app.req_head_time_stamp(1, symbol)
         return max('%s %s' % (time_s[0][1].split()[0], time_s[0][1].split()[1]), min_date)
+
+    def insert_ib_data(self, conn, symbol, rows):
+        if not symbol.startswith('US.'):
+            symbol = 'US.%s' % symbol
+
+        full_path = self._get_path_for_symbol(symbol)
+        if conn is None:
+            conn = sqlite3.connect(full_path)
+        sq_rows = [(e['dt'], e['open'], e['close'], e['high'], e['low'],
+                            e['volume'], e['pe'], e.get('average', -1), e['type']) for e in rows]
+        conn.executemany('''
+                        INSERT INTO stocks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', sq_rows)
+        conn.commit()
+        return conn
