@@ -84,6 +84,7 @@ def sync_1S():
     per_progress = 1 / float(num_contracts)
     base_td = 1
     for i, contract in enumerate(contracts):
+        db.download_db(contract.symbol)
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 32)
         base_progress = i / float(num_contracts)
         contract_earliest_time = db.query_ib_earliest_dt(base_td, app, contract, '20180702 00:00:00')
