@@ -212,7 +212,7 @@ class TestClient(EClient):
         contract.symbol = temp_symbol
 
         while True:
-            data = hist_data.get(timeout=140)
+            data = hist_data.get(timeout=100)
             if data is None:
                 continue
             if data[1] == 'historical_data':

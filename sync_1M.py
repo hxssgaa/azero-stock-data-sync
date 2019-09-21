@@ -56,7 +56,6 @@ def sync_1M():
     app = IBApp("localhost", 4001, 50)
     trading_days = utils.get_trading_days('20040123', (datetime.datetime.now()
                                                        + datetime.timedelta(30)).strftime('%Y%m%d'))
-    sync_days = 5
     base_req_id = 1000
     base_td = 1
     tmp_error_cnt = 0
@@ -66,7 +65,8 @@ def sync_1M():
         contract_dt_range = db.query_ib_data_dt_range(contract.symbol, 31)
         earliest_dt = db.query_ib_earliest_dt(base_td, app, contract, '20040123 23:59:59')
         base_td += 1
-        print(contract_dt_range)
+        sync_days = 5
+        print(i, contract_dt_range)
 
         if not contract_dt_range:
             earliest_dt = max('20040123 23:59:59', earliest_dt)
@@ -81,6 +81,7 @@ def sync_1M():
         query_time = max('20040123 23:59:59', query_time)
         first_query_time_int = date_2_int(query_time, is_short=True)
         end_query_time_int = date_2_int(datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'), is_short=True)
+
         previous_conn = None
         while True:
             if tmp_error_cnt >= 4:
@@ -89,6 +90,7 @@ def sync_1M():
                 app = IBApp("localhost", 4001, 50)
                 tmp_error_cnt = 0
                 base_req_id = 1000
+                sync_days = 5
                 print('1M %s app has been reset' % contract.symbol)
 
             if _is_datetime_up_to_date(trading_days, query_time):
@@ -106,6 +108,11 @@ def sync_1M():
                 tmp_error_cnt += 1
                 print('1M ' + contract.symbol + ' ' + query_time +
                       ' req historical data timeout, try again...')
+                # There was a case where decreasing the sync day would actually work
+                if sync_days > 1:
+                    sync_days -= 1
+                    query_time = _get_offset_trading_day(
+                        trading_days, query_time.split()[0], -1)
                 continue
 
             base_req_id += 1
